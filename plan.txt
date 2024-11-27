@@ -1,0 +1,105 @@
+# K-WordStudio MVP Plan
+
+## Core Features (Phase 1)
+1. Text Management
+   - Upload text files
+   - Display text in a readable format
+   - Store uploaded texts for future reference
+
+2. Interactive Reading
+   - Click words to create flashcards
+   - Highlight clicked words
+   - Show word status (new/learning/known)
+
+3. Flashcard System
+   - Add translations to selected words
+   - Store flashcards in a separate page
+   - Basic flashcard review system
+
+## Page Structure
+1. Home Page (/):
+   - Text upload
+   - Text display
+   - Interactive reading interface
+
+2. Flashcards Page (/flashcards):
+   - List all flashcards
+   - Search/filter capabilities
+   - Edit translations
+
+## Data Structure
+1. Text:
+   ```json
+   {
+     id: string,
+     title: string,
+     content: string,
+     dateAdded: Date
+   }
+   ```
+
+2. Flashcard:
+   ```json
+   {
+     id: string,
+     word: string,
+     translation: string,
+     context: string,
+     sourceTextId: string,
+     status: "new" | "learning" | "known"
+   }
+   ```
+
+
+   # K-WordStudio Enhanced Plan
+
+## Core Features (Phase 2)
+1. Enhanced Level System
+   - Change from 3-state to 6 levels (0-5)
+   - Fix status change bug in flashcard view
+   - Visual indicators for each level
+   - Color scheme similar to LingQ
+
+2. Improved Review System
+   - Select number of cards to review
+   - Show each word twice for mastery
+   - Click to flip card interface
+   - Simple feedback (✓/✗) buttons
+   - Auto-level up after two correct answers
+   - Track review progress
+
+3. Text Integration Features
+   - Review words from specific texts
+   - Color-code words in text by level
+   - Show text comprehension percentage
+   - Calculate known words in new texts
+   - Track reading progress
+
+## Data Structure Updates
+1. Flashcard:
+   ```json:src/app/flashcards/page.js
+   {
+     id: string,
+     word: string,
+     translation: string,
+     context: string,
+     sourceTextId: string,
+     level: number (0-5),
+     reviewCount: number,
+     lastReviewed: Date,
+     correctCount: number
+   }
+   ```
+
+2. Text:
+   ```json
+   {
+     id: string,
+     title: string,
+     content: string,
+     dateAdded: Date,
+     knownWords: number,
+     totalWords: number,
+     comprehension: number
+   }
+   ```
