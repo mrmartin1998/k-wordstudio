@@ -1,75 +1,45 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { fetchFlashcards, fetchTexts, createFlashcard, updateTextStats, createText } from '@/lib/utils';
 import FileUpload from '@/components/FileUpload';
 import WordModal from '@/components/WordModal';
 import Link from 'next/link';
 
 export default function Home() {
   const [text, setText] = useState('');
-  const [flashcards, setFlashcards] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('flashcards');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
+  const [flashcards, setFlashcards] = useState([]);
   const [selectedWord, setSelectedWord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [textStats, setTextStats] = useState({ totalWords: 0, knownWords: 0, comprehension: 0 });
   const searchParams = useSearchParams();
 
-  // Load existing flashcards when component mounts
+  // Load flashcards and text on mount
   useEffect(() => {
-    const saved = localStorage.getItem('flashcards');
-    if (saved) {
-      setFlashcards(JSON.parse(saved));
-    }
-  }, []);
-
-  // Load text if textId is provided
-  useEffect(() => {
-    const textId = searchParams.get('textId');
-    if (textId) {
-      const texts = JSON.parse(localStorage.getItem('texts') || '[]');
-      const savedText = texts.find(t => t.id === textId);
-      if (savedText) {
-        setText(savedText.content);
+    const loadData = async () => {
+      const textId = searchParams.get('textId');
+      try {
+        const cards = await fetchFlashcards(textId);
+        setFlashcards(cards);
+        
+        if (textId) {
+          const texts = await fetchTexts();
+          const savedText = texts.find(t => t._id === textId);
+          if (savedText) {
+            setText(savedText.content);
+            setTextStats({
+              totalWords: savedText.totalWords || 0,
+              knownWords: savedText.knownWords || 0,
+              comprehension: savedText.comprehension || 0
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error);
       }
-    }
-  }, [searchParams]);
-
-  const handleFileContent = (textData) => {
-    setText(textData.content);
-    
-    // Calculate initial text statistics
-    const words = textData.content.split(/(\s+|[,.!?])/);
-    const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
-    const savedCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
-    const knownWords = words.filter(word => {
-      const flashcard = savedCards.find(c => c.word === word);
-      return flashcard?.level >= 3;
-    }).length;
-
-    const newText = {
-      ...textData,
-      id: crypto.randomUUID(),
-      dateAdded: new Date(),
-      totalWords,
-      knownWords,
-      comprehension: Math.round((knownWords / totalWords) * 100)
     };
-
-    const texts = JSON.parse(localStorage.getItem('texts') || '[]');
-    const updatedTexts = [...texts, newText];
-    localStorage.setItem('texts', JSON.stringify(updatedTexts));
-  };
-
-  const getWordContext = (word, fullText) => {
-    // Get surrounding sentence or context
-    const sentences = fullText.split(/[.!?]+/);
-    const sentenceWithWord = sentences.find(sentence => sentence.includes(word)) || '';
-    return sentenceWithWord.trim();
-  };
+    loadData();
+  }, [searchParams]);
 
   const handleWordClick = (word) => {
     if (flashcards.some(card => card.word === word)) return;
@@ -81,35 +51,38 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
-  const handleSaveFlashcard = (flashcard) => {
+  const handleSaveFlashcard = async (flashcard) => {
     const textId = searchParams.get('textId');
-    const newCard = {
-      ...flashcard,
-      id: crypto.randomUUID(),
-      dateAdded: new Date(),
-      level: 0,
-      reviewCount: 0,
-      correctCount: 0,
-      sourceTextId: textId || null
-    };
-    
-    const existingCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
-    const updatedFlashcards = [...existingCards, newCard];
-    
-    setFlashcards(updatedFlashcards);
-    localStorage.setItem('flashcards', JSON.stringify(updatedFlashcards));
-    setIsModalOpen(false);
-    setSelectedWord(null);
+    try {
+      const newCard = await createFlashcard({
+        ...flashcard,
+        sourceTextId: textId || null,
+        level: 0,
+        reviewCount: 0,
+        correctCount: 0,
+        dateAdded: new Date()
+      });
+      setFlashcards([...flashcards, newCard]);
+      setIsModalOpen(false);
+      setSelectedWord(null);
+      
+      // Update text statistics after adding new flashcard
+      if (textId) {
+        await updateTextStatistics(textId);
+      }
+    } catch (error) {
+      console.error('Failed to create flashcard:', error);
+    }
   };
 
-  // Split text into words while preserving punctuation and spaces
+  const getWordContext = (word, fullText) => {
+    const sentences = fullText.split(/[.!?]+/);
+    const sentenceWithWord = sentences.find(sentence => sentence.includes(word)) || '';
+    return sentenceWithWord.trim();
+  };
+
   const renderInteractiveText = (text) => {
     const words = text.split(/(\s+|[,.!?])/);
-    const savedCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
-    
-    // Calculate text stats
-    const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
-    let knownWords = 0;
     
     return (
       <>
@@ -118,9 +91,7 @@ export default function Home() {
             if (!word.trim()) return word;
             if (/^[,.!?]$/.test(word)) return word;
             
-            const flashcard = savedCards.find(c => c.word === word);
-            if (flashcard?.level >= 3) knownWords++;
-            
+            const flashcard = flashcards.find(c => c.word === word);
             const levelColor = flashcard ? getLevelColor(flashcard.level || 0) : '';
             
             return (
@@ -135,12 +106,34 @@ export default function Home() {
           })}
         </div>
         <div className="mt-4 flex gap-4 text-sm">
-          <div>Total Words: {totalWords}</div>
-          <div>Known Words: {knownWords}</div>
-          <div>Comprehension: {Math.round((knownWords / totalWords) * 100)}%</div>
+          <div>Total Words: {textStats.totalWords}</div>
+          <div>Known Words: {textStats.knownWords}</div>
+          <div>Comprehension: {textStats.comprehension}%</div>
         </div>
       </>
     );
+  };
+
+  const updateTextStatistics = async (textId) => {
+    try {
+      const words = text.split(/(\s+|[,.!?])/);
+      const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
+      const knownWords = words.filter(word => {
+        const flashcard = flashcards.find(c => c.word === word);
+        return flashcard?.level >= 3;
+      }).length;
+
+      const stats = {
+        totalWords,
+        knownWords,
+        comprehension: Math.round((knownWords / totalWords) * 100)
+      };
+
+      await updateTextStats(textId, stats);
+      setTextStats(stats);
+    } catch (error) {
+      console.error('Failed to update text statistics:', error);
+    }
   };
 
   // Add the getLevelColor helper function
@@ -156,27 +149,52 @@ export default function Home() {
     }
   };
 
-  const updateTextStatistics = () => {
-    const texts = JSON.parse(localStorage.getItem('texts') || '[]');
-    const savedCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
+  const handleFileContent = async (fileData) => {
+    try {
+      const newText = await createText({
+        title: fileData.title,
+        content: fileData.content,
+        dateAdded: new Date(),
+        totalWords: 0,
+        knownWords: 0,
+        comprehension: 0
+      });
+      
+      setText(newText.content);
+      setTextStats({
+        totalWords: 0,
+        knownWords: 0,
+        comprehension: 0
+      });
+      
+      // Load flashcards for this text
+      const cards = await fetchFlashcards(newText._id);
+      setFlashcards(cards);
+      
+    } catch (error) {
+      console.error('Failed to create text:', error);
+    }
+  };
 
-    const updatedTexts = texts.map(text => {
-      const words = text.content.split(/(\s+|[,.!?])/);
-      const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
-      const knownWords = words.filter(word => {
-        const flashcard = savedCards.find(c => c.word === word);
-        return flashcard?.level >= 3;
-      }).length;
-
-      return {
-        ...text,
-        totalWords,
-        knownWords,
-        comprehension: Math.round((knownWords / totalWords) * 100)
-      };
-    });
-
-    localStorage.setItem('texts', JSON.stringify(updatedTexts));
+  const handleOpenText = async (textId) => {
+    try {
+      const texts = await fetchTexts();
+      const selectedText = texts.find(t => t._id === textId);
+      if (selectedText) {
+        setText(selectedText.content);
+        setTextStats({
+          totalWords: selectedText.totalWords || 0,
+          knownWords: selectedText.knownWords || 0,
+          comprehension: selectedText.comprehension || 0
+        });
+        
+        // Load flashcards for this text
+        const cards = await fetchFlashcards(textId);
+        setFlashcards(cards);
+      }
+    } catch (error) {
+      console.error('Failed to open text:', error);
+    }
   };
 
   return (
@@ -225,7 +243,7 @@ export default function Home() {
                   }}
                 />
                 <div className="text-sm text-gray-500 mt-2">
-                  Added: {card.dateAdded.toLocaleString()}
+                  Added: {new Date(card.dateAdded).toLocaleString()}
                 </div>
               </div>
             ))}

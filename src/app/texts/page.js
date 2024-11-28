@@ -1,56 +1,63 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { fetchTexts, deleteText, updateTextStats } from '@/lib/utils';
 
 export default function Texts() {
-  const [texts, setTexts] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('texts');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
-
-  const handleDeleteText = (id) => {
-    const newTexts = texts.filter(text => text.id !== id);
-    setTexts(newTexts);
-    localStorage.setItem('texts', JSON.stringify(newTexts));
-  };
-
-  const updateTextStatistics = () => {
-    const savedCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
-    const updatedTexts = texts.map(text => {
-      const words = text.content.split(/(\s+|[,.!?])/);
-      const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
-      const knownWords = words.filter(word => {
-        const flashcard = savedCards.find(c => c.word === word);
-        return flashcard?.level >= 3;
-      }).length;
-
-      return {
-        ...text,
-        totalWords,
-        knownWords,
-        comprehension: Math.round((knownWords / totalWords) * 100)
-      };
-    });
-
-    setTexts(updatedTexts);
-    localStorage.setItem('texts', JSON.stringify(updatedTexts));
-  };
+  const [texts, setTexts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'flashcards') {
-        updateTextStatistics();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    updateTextStatistics(); // Initial update
-
-    return () => window.removeEventListener('storage', handleStorageChange);
+    loadTexts();
   }, []);
+
+  const loadTexts = async () => {
+    try {
+      const data = await fetchTexts();
+      setTexts(data);
+    } catch (error) {
+      console.error('Failed to load texts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteText = async (id) => {
+    try {
+      await deleteText(id);
+      setTexts(texts.filter(text => text._id !== id));
+    } catch (error) {
+      console.error('Failed to delete text:', error);
+    }
+  };
+
+  const updateTextStatistics = async () => {
+    try {
+      const flashcards = await fetchFlashcards();
+      
+      for (const text of texts) {
+        const words = text.content.split(/(\s+|[,.!?])/);
+        const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
+        const knownWords = words.filter(word => {
+          const flashcard = flashcards.find(c => c.word === word);
+          return flashcard?.level >= 3;
+        }).length;
+
+        const stats = {
+          totalWords,
+          knownWords,
+          comprehension: Math.round((knownWords / totalWords) * 100)
+        };
+
+        await updateTextStats(text._id, stats);
+      }
+
+      // Reload texts to get updated stats
+      loadTexts();
+    } catch (error) {
+      console.error('Failed to update text statistics:', error);
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -90,14 +97,20 @@ export default function Texts() {
               </div>
               <div className="card-actions justify-end mt-4">
                 <Link 
-                  href={`/?textId=${text.id}`} 
+                  href={`/?textId=${text._id}`} 
                   className="btn btn-sm btn-primary"
                 >
                   Open
                 </Link>
+                <Link 
+                  href={`/review?textId=${text._id}`} 
+                  className="btn btn-sm btn-secondary"
+                >
+                  Review Words
+                </Link>
                 <button 
                   className="btn btn-sm btn-ghost btn-error"
-                  onClick={() => handleDeleteText(text.id)}
+                  onClick={() => handleDeleteText(text._id)}
                 >
                   Delete
                 </button>

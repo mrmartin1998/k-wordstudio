@@ -15,15 +15,15 @@ export default function FileUpload({ onFileContent }) {
       return;
     }
 
-    setTitle(file.name.replace('.txt', ''));
+    const fileName = file.name.replace('.txt', '');
+    setTitle(fileName);
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target.result;
       onFileContent({
-        title,
+        title: fileName,
         content: text,
-        id: Date.now().toString(),
         dateAdded: new Date()
       });
     };

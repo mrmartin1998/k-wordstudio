@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { fetchFlashcards, fetchTexts, updateFlashcard } from '@/lib/utils';
 
 export default function Review() {
   const [cards, setCards] = useState([]);
@@ -11,56 +13,68 @@ export default function Review() {
   const [reviewQueue, setReviewQueue] = useState([]);
   const [selectedText, setSelectedText] = useState('all');
   const [texts, setTexts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const savedTexts = localStorage.getItem('texts');
-    if (savedTexts) {
-      setTexts(JSON.parse(savedTexts));
-    }
+    loadInitialData();
   }, []);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('flashcards');
-    if (saved) {
-      const allCards = JSON.parse(saved);
-      setCards(allCards);
+  const loadInitialData = async () => {
+    try {
+      const [cardsData, textsData] = await Promise.all([
+        fetchFlashcards(),
+        fetchTexts()
+      ]);
+      setCards(cardsData);
+      setTexts(textsData);
       
-      let filtered = selectedLevel === 'all' 
-        ? allCards 
-        : allCards.filter(card => card.level === parseInt(selectedLevel));
-        
-      if (selectedText !== 'all') {
-        filtered = filtered.filter(card => card.sourceTextId === selectedText);
+      const textId = searchParams.get('textId');
+      if (textId) {
+        setSelectedText(textId);
+        const filtered = cardsData.filter(card => card.sourceTextId === textId);
+        if (filtered.length > 0) {
+          const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, reviewSize);
+          const firstHalf = [...shuffled];
+          const secondHalf = [...shuffled];
+          secondHalf.sort(() => Math.random() - 0.5);
+          setReviewQueue([...firstHalf, ...secondHalf]);
+          setCurrentIndex(0);
+        }
       }
-      
-      const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, reviewSize);
-      const firstHalf = [...shuffled];
-      const secondHalf = [...shuffled];
-      secondHalf.sort(() => Math.random() - 0.5);
-      setReviewQueue([...firstHalf, ...secondHalf]);
+    } catch (error) {
+      console.error('Failed to load initial data:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [selectedLevel, reviewSize, selectedText]);
+  };
 
-  const handleAnswer = (correct) => {
+  const handleAnswer = async (correct) => {
     const currentCard = reviewQueue[currentIndex];
-    const allCards = JSON.parse(localStorage.getItem('flashcards'));
-    const cardIndex = allCards.findIndex(c => c.word === currentCard.word);
+    if (!currentCard || !currentCard._id) {
+      console.error('No valid card found at current index');
+      return;
+    }
 
-    if (cardIndex !== -1) {
-      const card = allCards[cardIndex];
-      card.reviewCount = (card.reviewCount || 0) + 1;
-      card.correctCount = (card.correctCount || 0) + (correct ? 1 : 0);
-      card.lastReviewed = new Date();
+    try {
+      const updates = {
+        reviewCount: (currentCard.reviewCount || 0) + 1,
+        correctCount: (currentCard.correctCount || 0) + (correct ? 1 : 0),
+        lastReviewed: new Date(),
+        level: correct && currentCard.correctCount % 2 === 0
+          ? Math.min(5, (currentCard.level || 0) + 1)
+          : Math.max(0, (currentCard.level || 0) - 1)
+      };
 
-      // Auto-level up logic
-      if (correct && card.correctCount % 2 === 0) {
-        card.level = Math.min(5, (card.level || 0) + 1);
-      } else if (!correct) {
-        card.level = Math.max(0, (card.level || 0) - 1);
-      }
-
-      localStorage.setItem('flashcards', JSON.stringify(allCards));
+      const updated = await updateFlashcard(currentCard._id, updates);
+      
+      setCards(prevCards => 
+        prevCards.map(card => card._id === currentCard._id ? updated : card)
+      );
+      
       handleNext();
+    } catch (error) {
+      console.error('Failed to update flashcard:', error);
     }
   };
 

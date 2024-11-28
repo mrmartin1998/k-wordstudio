@@ -12,11 +12,7 @@ export default function WordModal({ word = '', context = '', onSave, onClose, is
       translation,
       notes,
       context: context || manualContext,
-      dateAdded: new Date(),
-      level: 0,
-      reviewCount: 0,
-      lastReviewed: null,
-      correctCount: 0
+      dateAdded: new Date()
     });
     setManualWord('');
     setTranslation('');

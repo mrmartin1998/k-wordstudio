@@ -1,17 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import WordModal from '@/components/WordModal';
+import { fetchFlashcards, createFlashcard, updateFlashcard, deleteFlashcard } from '@/lib/utils';
 
 export default function Flashcards() {
-  const [flashcards, setFlashcards] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('flashcards');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
-
+  const [flashcards, setFlashcards] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [sortBy, setSortBy] = useState('dateAdded');
@@ -19,40 +14,61 @@ export default function Flashcards() {
   const [selectedCards, setSelectedCards] = useState(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const updateLocalStorage = (cards) => {
-    localStorage.setItem('flashcards', JSON.stringify(cards));
+  useEffect(() => {
+    loadFlashcards();
+  }, []);
+
+  const loadFlashcards = async () => {
+    try {
+      const data = await fetchFlashcards();
+      setFlashcards(data);
+    } catch (error) {
+      console.error('Failed to load flashcards:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (index) => {
-    const newCards = flashcards.filter((_, i) => i !== index);
-    setFlashcards(newCards);
-    updateLocalStorage(newCards);
+  const handleDelete = async (id) => {
+    try {
+      await deleteFlashcard(id);
+      setFlashcards(flashcards.filter(card => card._id !== id));
+    } catch (error) {
+      console.error('Failed to delete flashcard:', error);
+    }
   };
 
-  const handleEdit = (index, updates) => {
-    const newCards = [...flashcards];
-    newCards[index] = { ...newCards[index], ...updates };
-    setFlashcards(newCards);
-    updateLocalStorage(newCards);
-    setEditingId(null);
+  const handleEdit = async (id, updates) => {
+    try {
+      const updated = await updateFlashcard(id, updates);
+      setFlashcards(flashcards.map(card => 
+        card._id === id ? updated : card
+      ));
+      setEditingId(null);
+    } catch (error) {
+      console.error('Failed to update flashcard:', error);
+    }
   };
 
-  const handleLevelChange = (cardId) => {
-    const cardIndex = flashcards.findIndex(c => c.id === cardId);
-    if (cardIndex === -1) return;
+  const handleLevelChange = async (id) => {
+    const card = flashcards.find(c => c._id === id);
+    if (!card) return;
 
-    const currentLevel = flashcards[cardIndex].level || 0;
-    const nextLevel = (currentLevel + 1) % 6; // Cycles through 0-5
-    
-    const newCards = [...flashcards];
-    newCards[cardIndex] = { 
-      ...newCards[cardIndex], 
-      level: nextLevel,
-      lastReviewed: new Date()
-    };
-    
-    setFlashcards(newCards);
-    updateLocalStorage(newCards);
+    const currentLevel = card.level || 0;
+    const nextLevel = (currentLevel + 1) % 6;
+
+    try {
+      const updated = await updateFlashcard(id, {
+        level: nextLevel,
+        lastReviewed: new Date()
+      });
+      
+      setFlashcards(flashcards.map(card => 
+        card._id === id ? updated : card
+      ));
+    } catch (error) {
+      console.error('Failed to update flashcard level:', error);
+    }
   };
 
   const getSortedCards = (cards) => {
@@ -140,7 +156,6 @@ export default function Flashcards() {
   const handleBulkDelete = () => {
     const newCards = flashcards.filter((_, index) => !selectedCards.has(index));
     setFlashcards(newCards);
-    updateLocalStorage(newCards);
     setSelectedCards(new Set());
   };
 
@@ -150,7 +165,6 @@ export default function Flashcards() {
       newCards[index] = { ...newCards[index], status: newStatus };
     });
     setFlashcards(newCards);
-    updateLocalStorage(newCards);
     setSelectedCards(new Set());
   };
 
@@ -194,7 +208,6 @@ export default function Flashcards() {
   const handleSaveFlashcard = (flashcard) => {
     const newCards = [...flashcards, flashcard];
     setFlashcards(newCards);
-    updateLocalStorage(newCards);
     setIsModalOpen(false);
   };
 
@@ -260,7 +273,7 @@ export default function Flashcards() {
                 <div className="flex gap-2">
                   <button 
                     className={`badge ${getLevelColor(card.level)} cursor-pointer`}
-                    onClick={() => handleLevelChange(card.id)}
+                    onClick={() => handleLevelChange(card._id)}
                   >
                     {getLevelText(card.level)}
                   </button>
@@ -272,7 +285,7 @@ export default function Flashcards() {
                   </button>
                   <button 
                     className="btn btn-ghost btn-xs text-error"
-                    onClick={() => handleDelete(index)}
+                    onClick={() => handleDelete(card._id)}
                   >
                     ✕
                   </button>
@@ -286,7 +299,7 @@ export default function Flashcards() {
                     <input
                       type="text"
                       value={card.translation || ''}
-                      onChange={(e) => handleEdit(index, { translation: e.target.value })}
+                      onChange={(e) => handleEdit(card._id, { translation: e.target.value })}
                       className="input input-bordered w-full"
                       placeholder="Translation"
                     />
@@ -295,7 +308,7 @@ export default function Flashcards() {
                     <label className="label">Notes</label>
                     <textarea
                       value={card.notes || ''}
-                      onChange={(e) => handleEdit(index, { notes: e.target.value })}
+                      onChange={(e) => handleEdit(card._id, { notes: e.target.value })}
                       className="textarea textarea-bordered w-full"
                       placeholder="Notes"
                     />
