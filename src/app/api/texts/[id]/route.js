@@ -37,4 +37,26 @@ export async function DELETE(request, { params }) {
   }
   
   return NextResponse.json({ success: true });
+}
+
+export async function GET(request, { params }) {
+  try {
+    await dbConnect();
+    const text = await Text.findById(params.id);
+    
+    if (!text) {
+      return NextResponse.json(
+        { error: 'Text not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(text);
+  } catch (error) {
+    console.error('Failed to fetch text:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch text' },
+      { status: 500 }
+    );
+  }
 } 

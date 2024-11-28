@@ -1,7 +1,16 @@
 export async function fetchTexts() {
-  const res = await fetch('/api/texts');
-  if (!res.ok) throw new Error('Failed to fetch texts');
-  return res.json();
+  try {
+    console.log('Fetching texts from API...');
+    const res = await fetch('/api/texts');
+    console.log('API Response status:', res.status);
+    const data = await res.json();
+    console.log('API Response data:', data);
+    if (!res.ok) throw new Error('Failed to fetch texts');
+    return data;
+  } catch (error) {
+    console.error('Error in fetchTexts:', error);
+    throw error;
+  }
 }
 
 export async function createText(data) {
@@ -39,7 +48,8 @@ export async function fetchFlashcards(textId) {
     if (!response.ok) {
       throw new Error('Failed to fetch flashcards');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Error:', error);
     return [];
@@ -71,5 +81,11 @@ export async function deleteFlashcard(id) {
     method: 'DELETE'
   });
   if (!res.ok) throw new Error('Failed to delete flashcard');
+  return res.json();
+}
+
+export async function fetchText(id) {
+  const res = await fetch(`/api/texts/${id}`);
+  if (!res.ok) throw new Error('Failed to fetch text');
   return res.json();
 } 
