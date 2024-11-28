@@ -7,10 +7,24 @@ import Link from 'next/link';
 
 export default function Home() {
   const [text, setText] = useState('');
-  const [flashcards, setFlashcards] = useState([]);
+  const [flashcards, setFlashcards] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('flashcards');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
   const [selectedWord, setSelectedWord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const searchParams = useSearchParams();
+
+  // Load existing flashcards when component mounts
+  useEffect(() => {
+    const saved = localStorage.getItem('flashcards');
+    if (saved) {
+      setFlashcards(JSON.parse(saved));
+    }
+  }, []);
 
   // Load text if textId is provided
   useEffect(() => {
@@ -49,9 +63,20 @@ export default function Home() {
   };
 
   const handleSaveFlashcard = (flashcard) => {
-    const updatedFlashcards = [...flashcards, flashcard];
+    const newCard = {
+      ...flashcard,
+      id: crypto.randomUUID(),
+      dateAdded: new Date(),
+      level: 0,
+      reviewCount: 0,
+      correctCount: 0
+    };
+    
+    // Load latest flashcards from localStorage to prevent overwriting
+    const existingCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
+    const updatedFlashcards = [...existingCards, newCard];
+    
     setFlashcards(updatedFlashcards);
-    // Save to localStorage
     localStorage.setItem('flashcards', JSON.stringify(updatedFlashcards));
     setIsModalOpen(false);
     setSelectedWord(null);
@@ -59,30 +84,56 @@ export default function Home() {
 
   // Split text into words while preserving punctuation and spaces
   const renderInteractiveText = (text) => {
-    // Split by spaces but keep spaces and punctuation
     const words = text.split(/(\s+|[,.!?])/);
+    const savedCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
+    
+    // Calculate text stats
+    const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
+    let knownWords = 0;
     
     return (
-      <div className="text-lg leading-relaxed">
-        {words.map((word, index) => {
-          // Skip empty strings and whitespace
-          if (!word.trim()) return word;
-          
-          // Don't make punctuation clickable
-          if (/^[,.!?]$/.test(word)) return word;
-          
-          return (
-            <span
-              key={index}
-              onClick={() => handleWordClick(word)}
-              className="cursor-pointer hover:bg-blue-100 px-0.5 rounded transition-colors"
-            >
-              {word}
-            </span>
-          );
-        })}
-      </div>
+      <>
+        <div className="text-lg leading-relaxed">
+          {words.map((word, index) => {
+            if (!word.trim()) return word;
+            if (/^[,.!?]$/.test(word)) return word;
+            
+            const flashcard = savedCards.find(c => c.word === word);
+            if (flashcard?.level >= 3) knownWords++;
+            
+            const levelColor = flashcard ? getLevelColor(flashcard.level || 0) : '';
+            
+            return (
+              <span
+                key={index}
+                onClick={() => handleWordClick(word)}
+                className={`cursor-pointer px-0.5 rounded transition-colors hover:bg-base-200 ${levelColor}`}
+              >
+                {word}
+              </span>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex gap-4 text-sm">
+          <div>Total Words: {totalWords}</div>
+          <div>Known Words: {knownWords}</div>
+          <div>Comprehension: {Math.round((knownWords / totalWords) * 100)}%</div>
+        </div>
+      </>
     );
+  };
+
+  // Add the getLevelColor helper function
+  const getLevelColor = (level) => {
+    switch(level) {
+      case 0: return 'text-error';
+      case 1: return 'text-warning';
+      case 2: return 'text-info';
+      case 3: return 'text-primary';
+      case 4: return 'text-secondary';
+      case 5: return 'text-success';
+      default: return '';
+    }
   };
 
   return (

@@ -37,12 +37,22 @@ export default function Flashcards() {
     setEditingId(null);
   };
 
-  const handleStatusChange = (index) => {
-    const statusOrder = ['new', 'learning', 'known'];
-    const currentStatus = flashcards[index].status || 'new';
-    const nextStatus = statusOrder[(statusOrder.indexOf(currentStatus) + 1) % 3];
+  const handleLevelChange = (cardId) => {
+    const cardIndex = flashcards.findIndex(c => c.id === cardId);
+    if (cardIndex === -1) return;
+
+    const currentLevel = flashcards[cardIndex].level || 0;
+    const nextLevel = (currentLevel + 1) % 6; // Cycles through 0-5
     
-    handleEdit(index, { status: nextStatus });
+    const newCards = [...flashcards];
+    newCards[cardIndex] = { 
+      ...newCards[cardIndex], 
+      level: nextLevel,
+      lastReviewed: new Date()
+    };
+    
+    setFlashcards(newCards);
+    updateLocalStorage(newCards);
   };
 
   const getSortedCards = (cards) => {
@@ -95,12 +105,27 @@ export default function Flashcards() {
     )
   );
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'new': return 'badge-warning';
-      case 'learning': return 'badge-info';
-      case 'known': return 'badge-success';
-      default: return 'badge-warning';
+  const getLevelColor = (level) => {
+    switch(level) {
+      case 0: return 'badge-error';    // Red - New
+      case 1: return 'badge-warning';  // Orange - Beginning
+      case 2: return 'badge-info';     // Blue - Learning
+      case 3: return 'badge-primary';  // Purple - Intermediate
+      case 4: return 'badge-secondary';// Gray - Advanced
+      case 5: return 'badge-success';  // Green - Known
+      default: return 'badge-error';
+    }
+  };
+
+  const getLevelText = (level) => {
+    switch(level) {
+      case 0: return 'New';
+      case 1: return 'Beginning';
+      case 2: return 'Learning';
+      case 3: return 'Intermediate';
+      case 4: return 'Advanced';
+      case 5: return 'Known';
+      default: return 'New';
     }
   };
 
@@ -234,10 +259,10 @@ export default function Flashcards() {
                 </div>
                 <div className="flex gap-2">
                   <button 
-                    className={`badge ${getStatusColor(card.status)} cursor-pointer`}
-                    onClick={() => handleStatusChange(index)}
+                    className={`badge ${getLevelColor(card.level)} cursor-pointer`}
+                    onClick={() => handleLevelChange(card.id)}
                   >
-                    {card.status || 'new'}
+                    {getLevelText(card.level)}
                   </button>
                   <button 
                     className="btn btn-ghost btn-xs"
@@ -294,8 +319,14 @@ export default function Flashcards() {
                 </>
               )}
               
-              <div className="text-xs text-base-content/50 mt-2">
-                Added: {new Date(card.dateAdded).toLocaleString()}
+              <div className="text-xs text-base-content/50 mt-2 space-y-1">
+                <div>Added: {new Date(card.dateAdded).toLocaleString()}</div>
+                {card.lastReviewed && (
+                  <div>Last reviewed: {new Date(card.lastReviewed).toLocaleString()}</div>
+                )}
+                {card.reviewCount > 0 && (
+                  <div>Reviews: {card.reviewCount} (Correct: {card.correctCount})</div>
+                )}
               </div>
             </div>
           </div>
