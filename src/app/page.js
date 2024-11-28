@@ -40,8 +40,27 @@ export default function Home() {
 
   const handleFileContent = (textData) => {
     setText(textData.content);
+    
+    // Calculate initial text statistics
+    const words = textData.content.split(/(\s+|[,.!?])/);
+    const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
+    const savedCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
+    const knownWords = words.filter(word => {
+      const flashcard = savedCards.find(c => c.word === word);
+      return flashcard?.level >= 3;
+    }).length;
+
+    const newText = {
+      ...textData,
+      id: crypto.randomUUID(),
+      dateAdded: new Date(),
+      totalWords,
+      knownWords,
+      comprehension: Math.round((knownWords / totalWords) * 100)
+    };
+
     const texts = JSON.parse(localStorage.getItem('texts') || '[]');
-    const updatedTexts = [...texts, textData];
+    const updatedTexts = [...texts, newText];
     localStorage.setItem('texts', JSON.stringify(updatedTexts));
   };
 
@@ -63,16 +82,17 @@ export default function Home() {
   };
 
   const handleSaveFlashcard = (flashcard) => {
+    const textId = searchParams.get('textId');
     const newCard = {
       ...flashcard,
       id: crypto.randomUUID(),
       dateAdded: new Date(),
       level: 0,
       reviewCount: 0,
-      correctCount: 0
+      correctCount: 0,
+      sourceTextId: textId || null
     };
     
-    // Load latest flashcards from localStorage to prevent overwriting
     const existingCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
     const updatedFlashcards = [...existingCards, newCard];
     
@@ -134,6 +154,29 @@ export default function Home() {
       case 5: return 'text-success';
       default: return '';
     }
+  };
+
+  const updateTextStatistics = () => {
+    const texts = JSON.parse(localStorage.getItem('texts') || '[]');
+    const savedCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
+
+    const updatedTexts = texts.map(text => {
+      const words = text.content.split(/(\s+|[,.!?])/);
+      const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
+      const knownWords = words.filter(word => {
+        const flashcard = savedCards.find(c => c.word === word);
+        return flashcard?.level >= 3;
+      }).length;
+
+      return {
+        ...text,
+        totalWords,
+        knownWords,
+        comprehension: Math.round((knownWords / totalWords) * 100)
+      };
+    });
+
+    localStorage.setItem('texts', JSON.stringify(updatedTexts));
   };
 
   return (

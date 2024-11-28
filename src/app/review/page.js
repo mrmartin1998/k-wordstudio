@@ -9,6 +9,15 @@ export default function Review() {
   const [reviewSize, setReviewSize] = useState(20);
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [reviewQueue, setReviewQueue] = useState([]);
+  const [selectedText, setSelectedText] = useState('all');
+  const [texts, setTexts] = useState([]);
+
+  useEffect(() => {
+    const savedTexts = localStorage.getItem('texts');
+    if (savedTexts) {
+      setTexts(JSON.parse(savedTexts));
+    }
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('flashcards');
@@ -16,24 +25,21 @@ export default function Review() {
       const allCards = JSON.parse(saved);
       setCards(allCards);
       
-      const filtered = selectedLevel === 'all' 
+      let filtered = selectedLevel === 'all' 
         ? allCards 
         : allCards.filter(card => card.level === parseInt(selectedLevel));
+        
+      if (selectedText !== 'all') {
+        filtered = filtered.filter(card => card.sourceTextId === selectedText);
+      }
       
-      // Shuffle and limit to reviewSize
       const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, reviewSize);
-      
-      // Create two sets of cards and shuffle them separately
       const firstHalf = [...shuffled];
       const secondHalf = [...shuffled];
-      
-      // Shuffle second half independently
       secondHalf.sort(() => Math.random() - 0.5);
-      
-      // Combine both halves
       setReviewQueue([...firstHalf, ...secondHalf]);
     }
-  }, [selectedLevel, reviewSize]);
+  }, [selectedLevel, reviewSize, selectedText]);
 
   const handleAnswer = (correct) => {
     const currentCard = reviewQueue[currentIndex];
@@ -158,19 +164,37 @@ export default function Review() {
                 <option value="5">Level 5 (Known)</option>
               </select>
             </div>
+            <div>
+              <label className="label">Text to review</label>
+              <select
+                className="select select-bordered w-full"
+                value={selectedText}
+                onChange={(e) => setSelectedText(e.target.value)}
+              >
+                <option value="all">All Texts</option>
+                {texts.map(text => (
+                  <option key={text.id} value={text.id}>{text.title}</option>
+                ))}
+              </select>
+            </div>
             <button 
               className="btn btn-primary w-full"
               onClick={() => {
-                const filtered = selectedLevel === 'all' 
-                  ? cards 
+                let filtered = selectedLevel === 'all'
+                  ? cards
                   : cards.filter(card => card.level === parseInt(selectedLevel));
+                
+                if (selectedText !== 'all') {
+                  filtered = filtered.filter(card => card.sourceTextId === selectedText);
+                }
                 
                 const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, reviewSize);
                 const firstHalf = [...shuffled];
                 const secondHalf = [...shuffled];
                 secondHalf.sort(() => Math.random() - 0.5);
-                
                 setReviewQueue([...firstHalf, ...secondHalf]);
+                setCurrentIndex(0);
+                setShowAnswer(false);
               }}
             >
               Start Review

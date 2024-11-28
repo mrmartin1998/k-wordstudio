@@ -17,6 +17,41 @@ export default function Texts() {
     localStorage.setItem('texts', JSON.stringify(newTexts));
   };
 
+  const updateTextStatistics = () => {
+    const savedCards = JSON.parse(localStorage.getItem('flashcards') || '[]');
+    const updatedTexts = texts.map(text => {
+      const words = text.content.split(/(\s+|[,.!?])/);
+      const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
+      const knownWords = words.filter(word => {
+        const flashcard = savedCards.find(c => c.word === word);
+        return flashcard?.level >= 3;
+      }).length;
+
+      return {
+        ...text,
+        totalWords,
+        knownWords,
+        comprehension: Math.round((knownWords / totalWords) * 100)
+      };
+    });
+
+    setTexts(updatedTexts);
+    localStorage.setItem('texts', JSON.stringify(updatedTexts));
+  };
+
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'flashcards') {
+        updateTextStatistics();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    updateTextStatistics(); // Initial update
+
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -34,6 +69,22 @@ export default function Texts() {
               <p className="text-sm text-base-content/70">
                 {text.content.slice(0, 100)}...
               </p>
+              
+              <div className="stats stats-vertical bg-base-300 rounded-box">
+                <div className="stat">
+                  <div className="stat-title">Total Words</div>
+                  <div className="stat-value text-lg">{text.totalWords || 0}</div>
+                </div>
+                <div className="stat">
+                  <div className="stat-title">Known Words</div>
+                  <div className="stat-value text-lg">{text.knownWords || 0}</div>
+                </div>
+                <div className="stat">
+                  <div className="stat-title">Comprehension</div>
+                  <div className="stat-value text-lg">{text.comprehension || 0}%</div>
+                </div>
+              </div>
+
               <div className="text-xs text-base-content/50">
                 Added: {new Date(text.dateAdded).toLocaleString()}
               </div>
