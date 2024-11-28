@@ -63,7 +63,7 @@ export default function Texts() {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Saved Texts</h1>
-        <Link href="/" className="btn btn-primary">
+        <Link href="/texts/upload" className="btn btn-primary">
           Add New Text
         </Link>
       </div>

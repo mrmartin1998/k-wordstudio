@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import WordModal from '@/components/WordModal';
+import WordModal from '@/app/components/WordModal';
 import { fetchFlashcards, createFlashcard, updateFlashcard, deleteFlashcard } from '@/lib/utils';
 
 export default function Flashcards() {

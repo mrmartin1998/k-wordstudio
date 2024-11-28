@@ -103,3 +103,99 @@
      comprehension: number
    }
    ```
+
+
+# K-WordStudio Phase 3 Plan
+
+## Application Structure
+1. Folder Organization
+   /src
+   ├── app/
+   │   ├── (auth)/         # Authentication routes
+   │   │   ├── login
+   │   │   ├── register
+   │   │   └── profile
+   │   ├── (dashboard)/    # Protected routes
+   │   │   ├── texts/      
+   │   │   ├── flashcards/
+   │   │   └── review/     
+   │   ├── components/     
+   │   │   ├── layout/     
+   │   │   └── ui/         
+   │   ├── lib/           
+   │   └── models/        
+
+2. Navigation & Layout
+   - Persistent navbar with:
+     * Dashboard overview
+     * Texts library
+     * Flashcards management
+     * Review system
+     * User settings
+   - Responsive sidebar for mobile
+   - Breadcrumb navigation
+   - Progress indicators
+
+3. Dashboard Features
+   - Quick statistics
+     * Total texts processed
+     * Active flashcards
+     * Current level distribution
+     * Weekly review progress
+   - Recent activity
+   - Study streak tracking
+   - Quick action buttons
+
+4. Authentication System
+   - User model:
+     ```json
+     {
+       id: string,
+       email: string,
+       username: string,
+       settings: {
+         defaultReviewSize: number,
+         preferredLevels: number[],
+         theme: "light" | "dark"
+       },
+       progress: {
+         totalReviews: number,
+         studyStreak: number,
+         lastActive: Date
+       }
+     }
+     ```
+   - Protected routes
+   - User preferences
+   - Progress tracking
+
+5. Theme System
+   - DaisyUI integration
+   - Dark/Light mode toggle
+   - Custom color palette
+   - Consistent component styling
+   - Level-based color indicators
+
+## Implementation Priorities
+1. Basic Structure
+   - Set up folder organization
+   - Create layout components
+   - Implement navigation
+
+2. Dashboard
+   - Convert current home page
+   - Add statistics components
+   - Create activity tracking
+
+3. Authentication
+   - Set up user model
+   - Implement basic auth
+   - Add protected routes
+
+4. Theme & UI
+   - Implement color system
+   - Create component library
+   - Add responsive design
+
+
+   

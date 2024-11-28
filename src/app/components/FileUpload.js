@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 export default function FileUpload({ onFileContent }) {
   const [error, setError] = useState('');
-  const [title, setTitle] = useState('');
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -16,7 +15,6 @@ export default function FileUpload({ onFileContent }) {
     }
 
     const fileName = file.name.replace('.txt', '');
-    setTitle(fileName);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -35,13 +33,6 @@ export default function FileUpload({ onFileContent }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Enter title (optional)"
-        className="input input-bordered w-full max-w-xs"
-      />
       <input
         type="file"
         accept=".txt"
