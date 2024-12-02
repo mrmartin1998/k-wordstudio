@@ -25,6 +25,27 @@ export default function CollectionView() {
     }
   };
 
+  const handleRemoveText = async (textId) => {
+    try {
+      const response = await fetch(`/api/texts/${textId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          collectionId: null
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to remove text from collection');
+      
+      // Refresh collection data
+      loadCollection();
+    } catch (error) {
+      console.error('Failed to remove text:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -78,7 +99,7 @@ export default function CollectionView() {
 
       <div className="divider">Texts in Collection</div>
 
-      {collection.texts?.length > 0 ? (
+      {collection?.texts?.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {collection.texts.map(text => (
             <div key={text._id} className="card bg-base-200 shadow-xl">
@@ -102,6 +123,12 @@ export default function CollectionView() {
                   >
                     Read Text
                   </Link>
+                  <button
+                    onClick={() => handleRemoveText(text._id)}
+                    className="btn btn-error btn-sm"
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
             </div>

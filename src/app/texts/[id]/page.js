@@ -15,10 +15,17 @@ export default function TextView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showCollectionSelector, setShowCollectionSelector] = useState(false);
+  const [collection, setCollection] = useState(null);
 
   useEffect(() => {
     loadData();
   }, [params.id]);
+
+  useEffect(() => {
+    if (text?.collectionId) {
+      fetchCollection(text.collectionId);
+    }
+  }, [text?.collectionId]);
 
   const loadData = async () => {
     try {
@@ -34,6 +41,17 @@ export default function TextView() {
       console.error('Failed to load text:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchCollection = async (collectionId) => {
+    try {
+      const response = await fetch(`/api/collections/${collectionId}`);
+      if (!response.ok) throw new Error('Failed to fetch collection');
+      const data = await response.json();
+      setCollection(data);
+    } catch (error) {
+      console.error('Failed to fetch collection:', error);
     }
   };
 
@@ -178,9 +196,26 @@ export default function TextView() {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">{text?.title || 'Loading...'}</h1>
-        <Link href="/texts" className="btn btn-ghost">
-          Back to Texts
-        </Link>
+        <div className="flex gap-2">
+          {collection ? (
+            <Link 
+              href={`/collections/${collection._id}`}
+              className="btn btn-primary"
+            >
+              {collection.name}
+            </Link>
+          ) : (
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowCollectionSelector(true)}
+            >
+              Add to Collection
+            </button>
+          )}
+          <Link href="/texts" className="btn btn-ghost">
+            Back to Texts
+          </Link>
+        </div>
       </div>
 
       {text?.audio?.url && (
@@ -233,15 +268,6 @@ export default function TextView() {
           setSelectedWord(null);
         }}
       />
-
-      <div className="flex justify-end mb-4">
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowCollectionSelector(true)}
-        >
-          Add to Collection
-        </button>
-      </div>
 
       <CollectionSelector
         isOpen={showCollectionSelector}

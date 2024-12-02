@@ -108,30 +108,35 @@ export default function Texts() {
     <div className="container mx-auto p-4">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Saved Texts</h1>
-        <div className="flex gap-2 mt-4 md:mt-0">
-          <select 
-            className="select select-bordered"
-            value={filterDifficulty}
-            onChange={(e) => setFilterDifficulty(e.target.value)}
-          >
-            <option value="">All Difficulties</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Elementary">Elementary</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
-            <option value="Expert">Expert</option>
-          </select>
+        <div className="flex gap-4 mt-4 md:mt-0">
+          <Link href="/texts/upload" className="btn btn-primary">
+            Add Text
+          </Link>
+          <div className="flex gap-2">
+            <select 
+              className="select select-bordered"
+              value={filterDifficulty}
+              onChange={(e) => setFilterDifficulty(e.target.value)}
+            >
+              <option value="">All Difficulties</option>
+              <option value="Beginner">Beginner</option>
+              <option value="Elementary">Elementary</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+              <option value="Expert">Expert</option>
+            </select>
 
-          <select 
-            className="select select-bordered"
-            value={filterCollection}
-            onChange={(e) => setFilterCollection(e.target.value)}
-          >
-            <option value="">All Collections</option>
-            {collections.map(col => (
-              <option key={col._id} value={col._id}>{col.name}</option>
-            ))}
-          </select>
+            <select 
+              className="select select-bordered"
+              value={filterCollection}
+              onChange={(e) => setFilterCollection(e.target.value)}
+            >
+              <option value="">All Collections</option>
+              {collections.map(col => (
+                <option key={col._id} value={col._id}>{col.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
