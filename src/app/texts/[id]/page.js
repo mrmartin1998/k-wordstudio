@@ -17,7 +17,20 @@ export default function TextView() {
   const [showCollectionSelector, setShowCollectionSelector] = useState(false);
   const [collection, setCollection] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const isSpeakingRef = useRef(false);
+  const [voices, setVoices] = useState([]);
+  const [selectedVoice, setSelectedVoice] = useState(null);
+  const [speechRate, setSpeechRate] = useState(1.0);
   const speechSynthesis = typeof window !== 'undefined' ? window.speechSynthesis : null;
+  const speedOptions = [0.5, 0.8, 1, 1.25, 1.5, 2];
+  const [currentWord, setCurrentWord] = useState(null);
+  const [currentPosition, setCurrentPosition] = useState(0);
+  const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
+  const resumeTimeoutRef = useRef(null);
+  const intervalRef = useRef(null);
+  const monitorIntervalRef = useRef(null);
+  const sentencesRef = useRef([]);
+  const offsetsRef = useRef([]);
 
   useEffect(() => {
     loadData();
@@ -28,6 +41,27 @@ export default function TextView() {
       fetchCollection(text.collectionId);
     }
   }, [text?.collectionId]);
+
+  // Load available voices
+  useEffect(() => {
+    if (!speechSynthesis) return;
+
+    const loadVoices = () => {
+      const availableVoices = speechSynthesis.getVoices();
+      // Filter for Korean voices
+      const koreanVoices = availableVoices.filter(voice => 
+        voice.lang.includes('ko') || voice.lang.includes('KR')
+      );
+      setVoices(koreanVoices);
+      // Set default voice if available
+      if (koreanVoices.length > 0) {
+        setSelectedVoice(koreanVoices[0]);
+      }
+    };
+
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
 
   const loadData = async () => {
     try {
@@ -124,25 +158,167 @@ export default function TextView() {
     return sentenceWithWord?.trim() || '';
   };
 
+  const splitIntoSentences = (text) => {
+    // Split by common Korean sentence endings
+    const sentences = text.split(/([.!?。]+\s*)/g)
+      .filter(Boolean)  // Remove empty strings
+      .reduce((acc, current, i, arr) => {
+        if (i % 2 === 0) {
+          // Combine sentence with its ending punctuation
+          acc.push(current + (arr[i + 1] || ''));
+        }
+        return acc;
+      }, []);
+
+    // Calculate character offsets for highlighting
+    let offset = 0;
+    const offsets = sentences.map(sentence => {
+      const start = offset;
+      offset += sentence.length;
+      return { start, end: offset };
+    });
+
+    return { sentences, offsets };
+  };
+
+  const handleSpeak = async () => {
+    if (!text?.content || !speechSynthesis) {
+      console.log('Missing requirements:', { 
+        hasText: !!text?.content, 
+        hasSpeechSynthesis: !!speechSynthesis 
+      });
+      return;
+    }
+
+    try {
+      setIsSpeaking(true);
+      isSpeakingRef.current = true;
+      
+      const { sentences, offsets } = splitIntoSentences(text.content);
+      sentencesRef.current = sentences;
+      offsetsRef.current = offsets;
+      
+      console.log('Starting speech with:', {
+        sentences,
+        offsets,
+        speechRate,
+        selectedVoice: selectedVoice?.name
+      });
+
+      // Speak each sentence sequentially
+      for (let i = 0; i < sentences.length; i++) {
+        if (!isSpeakingRef.current) {
+          console.log('Speech stopped by user');
+          break;
+        }
+        console.log(`Speaking sentence ${i + 1}/${sentences.length}:`, sentences[i]);
+        setCurrentSentenceIndex(i);
+        
+        await speakSentence(sentences[i], i);
+        
+        // Small pause between sentences
+        if (isSpeakingRef.current) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+    } catch (error) {
+      console.error('Speech error:', error);
+    } finally {
+      cleanup();
+    }
+  };
+
+  const speakSentence = (sentence, index) => {
+    return new Promise((resolve, reject) => {
+      if (!speechSynthesis) {
+        console.error('Speech synthesis not available');
+        reject('No speech synthesis available');
+        return;
+      }
+
+      console.log('Creating utterance for:', sentence);
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      utterance.rate = speechRate;
+      utterance.pitch = 1.0;
+      utterance.lang = 'ko-KR';
+      
+      if (selectedVoice) {
+        console.log('Using voice:', selectedVoice.name);
+        utterance.voice = selectedVoice;
+      }
+
+      // Update position based on sentence offset
+      const offset = offsetsRef.current[index];
+      const sentenceLength = sentence.length;
+      let charIndex = 0;
+
+      intervalRef.current = setInterval(() => {
+        if (charIndex < sentenceLength) {
+          setCurrentPosition(offset.start + charIndex);
+          charIndex++;
+        }
+      }, 138 / speechRate);
+
+      utterance.onstart = () => {
+        console.log('Sentence started:', sentence);
+      };
+
+      utterance.onend = () => {
+        console.log('Sentence ended:', sentence);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        resolve();
+      };
+
+      utterance.onerror = (error) => {
+        console.error('Utterance error:', error);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        reject(error);
+      };
+
+      try {
+        speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.error('Error calling speak:', error);
+        reject(error);
+      }
+    });
+  };
+
+  const cleanup = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setIsSpeaking(false);
+    isSpeakingRef.current = false;
+    setCurrentPosition(0);
+    setCurrentSentenceIndex(0);
+    speechSynthesis?.cancel();
+  };
+
+  const stopSpeaking = () => {
+    isSpeakingRef.current = false;
+    cleanup();
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return cleanup;
+  }, []);
+
   const renderInteractiveText = (content) => {
     if (!content) return null;
 
-    const words = content.split(/(\s+|[,.!?])/);
-    return words.map((word, index) => {
-      if (!word.trim() || /^[,.!?]$/.test(word)) {
-        return word;
-      }
-
-      const flashcard = flashcards.find(c => c.word === word.trim());
-      const levelColor = flashcard ? getLevelColor(flashcard.level) : '';
+    const chars = content.split('');
+    return chars.map((char, index) => {
+      const isCurrentChar = isSpeaking && 
+        index >= currentPosition && 
+        index < currentPosition + 5;
 
       return (
         <span
           key={index}
-          className={`cursor-pointer hover:bg-base-300 px-1 rounded ${levelColor}`}
-          onClick={() => handleWordClick(word.trim())}
+          className={`transition-colors duration-200 
+            ${isCurrentChar ? 'bg-red-500 text-white' : ''}`}
         >
-          {word}
+          {char}
         </span>
       );
     });
@@ -194,34 +370,23 @@ export default function TextView() {
     }
   };
 
-  const handleSpeak = () => {
-    if (!text?.content || !speechSynthesis) return;
-
-    // Stop any ongoing speech
-    speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text.content);
-    utterance.rate = 1.0; // Normal speed
-    utterance.pitch = 1.0; // Normal pitch
-    
-    // Optional: Try to set Korean language
-    utterance.lang = 'ko-KR';
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    speechSynthesis.speak(utterance);
+  const getVoiceName = (voice) => {
+    // Customize voice names for better readability
+    return voice.name
+      .replace('Microsoft', 'MS')
+      .replace('Korean', '한국어')
+      .split(' ')
+      .slice(0, 3)
+      .join(' ');
   };
 
-  // Stop speaking when component unmounts
-  useEffect(() => {
-    return () => {
-      if (speechSynthesis) {
-        speechSynthesis.cancel();
-      }
-    };
-  }, []);
+  const handleSpeakButtonClick = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+    } else {
+      handleSpeak();
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -252,12 +417,44 @@ export default function TextView() {
       {text?.audio?.url && (
         <div className="mb-8">
           <AudioPlayer audioUrl={text.audio.url} />
-          <button 
-            className={`btn ${isSpeaking ? 'btn-error' : 'btn-primary'} mt-4`}
-            onClick={handleSpeak}
-          >
-            {isSpeaking ? 'Stop Speaking' : 'Read Text'}
-          </button>
+          <div className="flex flex-col gap-4 mt-4">
+            {voices.length > 0 && (
+              <select 
+                className="select select-bordered w-full max-w-xs"
+                value={selectedVoice?.name || ''}
+                onChange={(e) => {
+                  const voice = voices.find(v => v.name === e.target.value);
+                  setSelectedVoice(voice);
+                }}
+              >
+                {voices.map(voice => (
+                  <option key={voice.name} value={voice.name}>
+                    {voice.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Speed:</span>
+              {speedOptions.map((speed) => (
+                <button
+                  key={speed}
+                  onClick={() => setSpeechRate(speed)}
+                  className={`btn btn-sm ${speechRate === speed ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  {speed}x
+                </button>
+              ))}
+            </div>
+
+            <button 
+              className={`btn ${isSpeaking ? 'btn-error' : 'btn-primary'}`}
+              onClick={handleSpeakButtonClick}
+            >
+              {isSpeaking ? 'Stop Speaking' : 'Read Text'}
+            </button>
+          </div>
         </div>
       )}
 
