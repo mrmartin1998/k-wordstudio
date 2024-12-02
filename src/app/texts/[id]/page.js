@@ -4,7 +4,6 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { fetchText, fetchFlashcards, createFlashcard, updateFlashcard, updateTextStats } from '@/lib/utils';
 import WordModal from '@/app/components/WordModal';
-import AudioPlayer from '@/app/components/AudioPlayer';
 import CollectionSelector from '@/app/components/text/CollectionSelector';
 
 export default function TextView() {
@@ -406,7 +405,6 @@ export default function TextView() {
 
       {text?.audio?.url && (
         <div className="mb-8">
-          <AudioPlayer audioUrl={text.audio.url} />
           <div className="flex flex-col gap-4 mt-4">
             {voices.length > 0 && (
               <select 
