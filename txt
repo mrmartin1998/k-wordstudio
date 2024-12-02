@@ -1,0 +1,12 @@
+i found the message where you mentioned features to add, here there are:
+
+I'll provide a complete updated version of the TextView component with all the new features. Would you like me to break it down into sections after sharing the full code, so you can understand each new feature? The file will include:
+Voice selection with cleaned-up names
+Speed control buttons
+Text highlighting
+Progress indicator
+Keyboard shortcuts
+Section repeat functionality
+Click-to-start-from-point feature
+Would you like me to proceed with the complete file?
+

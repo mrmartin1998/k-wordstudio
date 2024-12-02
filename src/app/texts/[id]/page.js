@@ -170,15 +170,7 @@ export default function TextView() {
         return acc;
       }, []);
 
-    // Calculate character offsets for highlighting
-    let offset = 0;
-    const offsets = sentences.map(sentence => {
-      const start = offset;
-      offset += sentence.length;
-      return { start, end: offset };
-    });
-
-    return { sentences, offsets };
+    return sentences;
   };
 
   const handleSpeak = async () => {
@@ -194,13 +186,11 @@ export default function TextView() {
       setIsSpeaking(true);
       isSpeakingRef.current = true;
       
-      const { sentences, offsets } = splitIntoSentences(text.content);
+      const sentences = splitIntoSentences(text.content);
       sentencesRef.current = sentences;
-      offsetsRef.current = offsets;
       
       console.log('Starting speech with:', {
         sentences,
-        offsets,
         speechRate,
         selectedVoice: selectedVoice?.name
       });
@@ -236,7 +226,7 @@ export default function TextView() {
         return;
       }
 
-      console.log('Creating utterance for:', sentence);
+      console.log(`Speaking sentence ${index + 1}:`, sentence); // Debug log
       const utterance = new SpeechSynthesisUtterance(sentence);
       utterance.rate = speechRate;
       utterance.pitch = 1.0;
@@ -247,40 +237,22 @@ export default function TextView() {
         utterance.voice = selectedVoice;
       }
 
-      // Update position based on sentence offset
-      const offset = offsetsRef.current[index];
-      const sentenceLength = sentence.length;
-      let charIndex = 0;
-
-      intervalRef.current = setInterval(() => {
-        if (charIndex < sentenceLength) {
-          setCurrentPosition(offset.start + charIndex);
-          charIndex++;
-        }
-      }, 138 / speechRate);
-
       utterance.onstart = () => {
         console.log('Sentence started:', sentence);
+        setCurrentSentenceIndex(index);
       };
 
       utterance.onend = () => {
         console.log('Sentence ended:', sentence);
-        if (intervalRef.current) clearInterval(intervalRef.current);
         resolve();
       };
 
       utterance.onerror = (error) => {
         console.error('Utterance error:', error);
-        if (intervalRef.current) clearInterval(intervalRef.current);
         reject(error);
       };
 
-      try {
-        speechSynthesis.speak(utterance);
-      } catch (error) {
-        console.error('Error calling speak:', error);
-        reject(error);
-      }
+      speechSynthesis.speak(utterance);
     });
   };
 
@@ -306,19 +278,37 @@ export default function TextView() {
   const renderInteractiveText = (content) => {
     if (!content) return null;
 
-    const chars = content.split('');
-    return chars.map((char, index) => {
-      const isCurrentChar = isSpeaking && 
-        index >= currentPosition && 
-        index < currentPosition + 5;
+    const sentences = splitIntoSentences(content);
+    
+    return sentences.map((sentence, sentenceIndex) => {
+      // Split each sentence into words
+      const words = sentence.split(/(\s+|[,.!?]|(?<=[\u3131-\u318E\uAC00-\uD7A3])(?![\u3131-\u318E\uAC00-\uD7A3])|(?<![\u3131-\u318E\uAC00-\uD7A3])(?=[\u3131-\u318E\uAC00-\uD7A3]))/g)
+        .filter(Boolean);
 
       return (
-        <span
-          key={index}
-          className={`transition-colors duration-200 
-            ${isCurrentChar ? 'bg-red-500 text-white' : ''}`}
+        <span 
+          key={sentenceIndex}
+          className={`${sentenceIndex === currentSentenceIndex && isSpeaking ? 'bg-red-500 text-white' : ''}`}
         >
-          {char}
+          {words.map((word, wordIndex) => {
+            const existingCard = flashcards.find(c => c.word === word.trim());
+            const levelColor = existingCard ? getLevelColor(existingCard.level) : '';
+
+            // If it's a space or punctuation, render it without extra spacing
+            if (/^[\s,.!?]+$/.test(word)) {
+              return <span key={`${sentenceIndex}-${wordIndex}`}>{word}</span>;
+            }
+
+            return (
+              <span
+                key={`${sentenceIndex}-${wordIndex}`}
+                className={`cursor-pointer hover:bg-base-300 ${levelColor}`}
+                onClick={() => handleWordClick(word.trim())}
+              >
+                {word}
+              </span>
+            );
+          })}
         </span>
       );
     });
