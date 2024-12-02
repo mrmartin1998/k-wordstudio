@@ -8,6 +8,7 @@ export default function Navbar() {
   const navItems = [
     { label: 'Dashboard', href: '/' },
     { label: 'Texts', href: '/texts' },
+    { label: 'Collections', href: '/collections' },
     { label: 'Flashcards', href: '/flashcards' },
     { label: 'Review', href: '/review' }
   ];

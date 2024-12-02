@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { fetchText, fetchFlashcards, createFlashcard, updateFlashcard, updateTextStats } from '@/lib/utils';
 import WordModal from '@/app/components/WordModal';
 import AudioPlayer from '@/app/components/AudioPlayer';
+import CollectionSelector from '@/app/components/text/CollectionSelector';
 
 export default function TextView() {
   const params = useParams();
@@ -13,6 +14,7 @@ export default function TextView() {
   const [selectedWord, setSelectedWord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCollectionSelector, setShowCollectionSelector] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -150,6 +152,28 @@ export default function TextView() {
     };
   };
 
+  const handleCollectionSelect = async (collectionId) => {
+    try {
+      const response = await fetch(`/api/texts/${text._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...text,
+          collectionId
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update text');
+      
+      const updatedText = await response.json();
+      setText(updatedText);
+    } catch (error) {
+      console.error('Failed to update text collection:', error);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -208,6 +232,22 @@ export default function TextView() {
           setIsModalOpen(false);
           setSelectedWord(null);
         }}
+      />
+
+      <div className="flex justify-end mb-4">
+        <button 
+          className="btn btn-primary"
+          onClick={() => setShowCollectionSelector(true)}
+        >
+          Add to Collection
+        </button>
+      </div>
+
+      <CollectionSelector
+        isOpen={showCollectionSelector}
+        onClose={() => setShowCollectionSelector(false)}
+        onSelect={handleCollectionSelect}
+        currentCollectionId={text?.collectionId}
       />
     </div>
   );

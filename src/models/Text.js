@@ -9,11 +9,14 @@ const textSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  audio: {
-    url: String,
-    duration: Number,
-    fileName: String,
-    mimeType: String
+  difficulty: {
+    type: String,
+    enum: ['Beginner', 'Elementary', 'Intermediate', 'Advanced', 'Expert'],
+    default: 'Intermediate'
+  },
+  collectionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Collection'
   },
   dateAdded: {
     type: Date,
@@ -30,6 +33,12 @@ const textSchema = new mongoose.Schema({
   comprehension: {
     type: Number,
     default: 0
+  },
+  audio: {
+    url: String,
+    duration: Number,
+    fileName: String,
+    mimeType: String
   }
 });
 

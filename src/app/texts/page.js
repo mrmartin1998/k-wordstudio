@@ -1,15 +1,19 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { fetchTexts, fetchFlashcards, deleteText, updateTextStats } from '@/lib/utils';
+import { fetchTexts, fetchFlashcards, deleteText, updateTextStats, fetchCollections } from '@/lib/utils';
 
 export default function Texts() {
   const [texts, setTexts] = useState([]);
   const [flashcards, setFlashcards] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [collections, setCollections] = useState([]);
+  const [filterDifficulty, setFilterDifficulty] = useState('');
+  const [filterCollection, setFilterCollection] = useState('');
 
   useEffect(() => {
     loadData();
+    loadCollections();
   }, []);
 
   const loadData = async () => {
@@ -45,6 +49,15 @@ export default function Texts() {
       console.error('Failed to load texts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCollections = async () => {
+    try {
+      const data = await fetchCollections();
+      setCollections(data);
+    } catch (error) {
+      console.error('Failed to load collections:', error);
     }
   };
 
@@ -85,22 +98,50 @@ export default function Texts() {
     }
   };
 
+  const filteredTexts = texts.filter(text => {
+    if (filterDifficulty && text.difficulty !== filterDifficulty) return false;
+    if (filterCollection && text.collectionId !== filterCollection) return false;
+    return true;
+  });
+
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Saved Texts</h1>
-        <Link href="/texts/upload" className="btn btn-primary">
-          Add New Text
-        </Link>
+        <div className="flex gap-2 mt-4 md:mt-0">
+          <select 
+            className="select select-bordered"
+            value={filterDifficulty}
+            onChange={(e) => setFilterDifficulty(e.target.value)}
+          >
+            <option value="">All Difficulties</option>
+            <option value="Beginner">Beginner</option>
+            <option value="Elementary">Elementary</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+            <option value="Expert">Expert</option>
+          </select>
+
+          <select 
+            className="select select-bordered"
+            value={filterCollection}
+            onChange={(e) => setFilterCollection(e.target.value)}
+          >
+            <option value="">All Collections</option>
+            {collections.map(col => (
+              <option key={col._id} value={col._id}>{col.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center">
           <span className="loading loading-spinner loading-lg"></span>
         </div>
-      ) : texts.length > 0 ? (
+      ) : filteredTexts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {texts.map(text => (
+          {filteredTexts.map(text => (
             <div key={text._id} className="card bg-base-200 shadow-xl">
               <div className="card-body">
                 <h2 className="card-title">{text.title}</h2>

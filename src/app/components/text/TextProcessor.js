@@ -1,9 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { createFlashcard, createText, fetchFlashcards } from '@/lib/utils';
+import { createFlashcard, createText, fetchFlashcards, fetchCollections } from '@/lib/utils';
 import FileUpload from '@/app/components/FileUpload';
 import WordModal from '@/app/components/WordModal';
 import AudioUpload from '@/app/components/AudioUpload';
+import { useRouter } from 'next/navigation';
 
 export default function TextProcessor() {
   const [title, setTitle] = useState('');
@@ -20,9 +21,15 @@ export default function TextProcessor() {
     comprehension: 0
   });
   const [fileData, setFileData] = useState(null);
+  const [difficulty, setDifficulty] = useState('Intermediate');
+  const [collection, setCollection] = useState(null);
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     loadFlashcards();
+    loadCollections();
   }, []);
 
   const loadFlashcards = async () => {
@@ -31,6 +38,15 @@ export default function TextProcessor() {
       setFlashcards(cards);
     } catch (error) {
       console.error('Failed to load flashcards:', error);
+    }
+  };
+
+  const loadCollections = async () => {
+    try {
+      const data = await fetchCollections();
+      setCollections(data);
+    } catch (error) {
+      console.error('Failed to load collections:', error);
     }
   };
 
@@ -56,7 +72,8 @@ export default function TextProcessor() {
     setAudioData(data);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!fileData || !title) {
       setError('Please provide both a title and text file');
       return;
@@ -71,31 +88,34 @@ export default function TextProcessor() {
       
       const textData = {
         title: title,
-        content,
+        content: content,
+        difficulty: difficulty,
+        collectionId: selectedCollection || null,
+        totalWords: words.length,
         audio: audioData ? {
           url: audioData.url,
+          duration: audioData.duration,
           fileName: audioData.fileName,
           mimeType: audioData.mimeType
-        } : null,
-        dateAdded: new Date(),
-        totalWords: words.length,
-        knownWords: 0,
-        comprehension: 0
+        } : null
       };
       
-      console.log('Creating text with:', textData);
-      
-      const newText = await createText(textData);
-      console.log('Created text:', newText);
-      
-      if (newText._id) {
-        window.location.href = `/texts/${newText._id}`;
-      } else {
-        throw new Error('No text ID returned from creation');
+      const response = await fetch('/api/texts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(textData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create text');
       }
+
+      router.push('/texts');
     } catch (error) {
-      console.error('Failed to create text:', error);
-      setError(`Failed to upload text: ${error.message}`);
+      console.error('Error creating text:', error);
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -159,6 +179,39 @@ export default function TextProcessor() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
+      </div>
+
+      <div className="form-control w-full mb-4">
+        <label className="label">
+          <span className="label-text">Difficulty Level</span>
+        </label>
+        <select 
+          className="select select-bordered"
+          value={difficulty}
+          onChange={(e) => setDifficulty(e.target.value)}
+        >
+          <option value="Beginner">Beginner</option>
+          <option value="Elementary">Elementary</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
+          <option value="Expert">Expert</option>
+        </select>
+      </div>
+
+      <div className="form-control w-full mb-4">
+        <label className="label">
+          <span className="label-text">Collection (Optional)</span>
+        </label>
+        <select 
+          className="select select-bordered"
+          value={selectedCollection}
+          onChange={(e) => setSelectedCollection(e.target.value)}
+        >
+          <option value="">No Collection</option>
+          {collections.map(col => (
+            <option key={col._id} value={col._id}>{col.name}</option>
+          ))}
+        </select>
       </div>
 
       <FileUpload onFileContent={handleFileContent} />

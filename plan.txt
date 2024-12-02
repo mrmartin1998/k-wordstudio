@@ -38,9 +38,9 @@
    - ✅ Reading progress tracking
 
 4. Audio Features 🔴
-   - 🔴 Audio file upload and storage
-   - 🔴 Audio playback integration
-   - 🔴 Text-audio synchronization
+   - ✅ Basic audio file upload and storage
+   - ✅ Basic audio playback integration
+   - 🔴 Advanced audio controls
    - 🔴 Audio progress tracking
 
 5. Text Organization 🔴
@@ -52,7 +52,6 @@
      * Expert
    - 🔴 Text collections/groups
    - 🔴 Collection management
-   - 🔴 Collection sharing
    - 🔴 Collection statistics
 
 ## Phase 3 (Structure & Auth) 🟨 IN PROGRESS
@@ -122,6 +121,19 @@
    - Data portability
    - Progress reports
    - Learning statistics
+
+6. Advanced Audio Features
+   - Text-audio synchronization
+   - Audio waveform visualization
+   - Section bookmarking
+   - Speed controls
+   - Segment repeat functionality
+   - Audio chunk processing
+   - Audio quality optimization
+   - Resume functionality
+   - Listened sections tracking
+   - Word-level synchronization
+   - Text highlighting during playback
 
 
    

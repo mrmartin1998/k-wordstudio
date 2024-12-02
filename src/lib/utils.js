@@ -88,4 +88,38 @@ export async function fetchText(id) {
   const res = await fetch(`/api/texts/${id}`);
   if (!res.ok) throw new Error('Failed to fetch text');
   return res.json();
+}
+
+export async function fetchCollections() {
+  const res = await fetch('/api/collections');
+  if (!res.ok) throw new Error('Failed to fetch collections');
+  return res.json();
+}
+
+export async function createCollection(data) {
+  const res = await fetch('/api/collections', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Failed to create collection');
+  return res.json();
+}
+
+export async function updateCollection(id, data) {
+  const res = await fetch(`/api/collections/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Failed to update collection');
+  return res.json();
+}
+
+export async function deleteCollection(id) {
+  const res = await fetch(`/api/collections/${id}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error('Failed to delete collection');
+  return res.json();
 } 
