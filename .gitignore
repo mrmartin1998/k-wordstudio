@@ -34,3 +34,7 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# Ignore uploaded files but keep directory
+public/uploads/audio/*
+!public/uploads/audio/.gitkeep

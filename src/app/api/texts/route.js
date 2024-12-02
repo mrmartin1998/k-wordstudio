@@ -20,12 +20,33 @@ export async function POST(request) {
   try {
     await dbConnect();
     const data = await request.json();
-    const text = await Text.create(data);
+    console.log('Creating text with data:', data);
+    
+    // Validate required fields
+    if (!data.title || !data.content) {
+      return NextResponse.json(
+        { error: 'Title and content are required' },
+        { status: 400 }
+      );
+    }
+
+    // Create the text document
+    const text = await Text.create({
+      title: data.title,
+      content: data.content,
+      audio: data.audio,
+      dateAdded: new Date(),
+      totalWords: data.totalWords || 0,
+      knownWords: data.knownWords || 0,
+      comprehension: data.comprehension || 0
+    });
+
+    console.log('Created text:', text);
     return NextResponse.json(text);
   } catch (error) {
     console.error('Failed to create text:', error);
     return NextResponse.json(
-      { error: 'Failed to create text' },
+      { error: `Failed to create text: ${error.message}` },
       { status: 500 }
     );
   }

@@ -1,0 +1,33 @@
+# Cloud Storage Options for Portfolio Project
+
+## Supabase Storage (Recommended)
+Free tier includes:
+- 1GB storage
+- 2GB bandwidth
+- Easy to integrate with Next.js
+- Comes with authentication and database
+- Good documentation
+- Can easily scale if needed
+
+## Cloudinary
+Free tier includes:
+- 25 credits (~25GB storage)
+- Good for media optimization
+- Built-in image/video transformations
+- CDN included
+
+## Firebase Storage
+Free tier includes:
+- 5GB storage
+- 1GB/day download
+- Good if already using Firebase
+- Easy authentication integration
+- Reliable Google infrastructure
+
+## Recommendation
+For a portfolio project with limited usage, Supabase is recommended due to:
+1. Generous free tier
+2. Easy setup with Next.js
+3. Includes database and auth if needed
+4. Good documentation
+5. Can easily scale if needed

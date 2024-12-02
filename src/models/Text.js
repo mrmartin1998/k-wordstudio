@@ -9,6 +9,12 @@ const textSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  audio: {
+    url: String,
+    duration: Number,
+    fileName: String,
+    mimeType: String
+  },
   dateAdded: {
     type: Date,
     default: Date.now

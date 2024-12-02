@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 import { createFlashcard, createText, fetchFlashcards } from '@/lib/utils';
 import FileUpload from '@/app/components/FileUpload';
 import WordModal from '@/app/components/WordModal';
+import AudioUpload from '@/app/components/AudioUpload';
 
 export default function TextProcessor() {
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
+  const [audioData, setAudioData] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
   const [selectedWord, setSelectedWord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,6 +19,7 @@ export default function TextProcessor() {
     knownWords: 0,
     comprehension: 0
   });
+  const [fileData, setFileData] = useState(null);
 
   useEffect(() => {
     loadFlashcards();
@@ -43,30 +46,56 @@ export default function TextProcessor() {
     }
   };
 
-  const handleFileContent = async (fileData) => {
+  const handleFileContent = (data) => {
+    console.log('File content received:', data);
+    setFileData(data);
+  };
+
+  const handleAudioUpload = (data) => {
+    console.log('Audio upload data:', data);
+    setAudioData(data);
+  };
+
+  const handleSubmit = async () => {
+    if (!fileData || !title) {
+      setError('Please provide both a title and text file');
+      return;
+    }
+    
     setIsLoading(true);
+    setError(null);
+    
     try {
       const content = fileData.content;
-      const words = content.split(/\s+/);
+      const words = content.split(/\s+/).filter(w => w.trim());
       
-      const newText = await createText({
-        title: title || fileData.title,
-        content: content,
+      const textData = {
+        title: title,
+        content,
+        audio: audioData ? {
+          url: audioData.url,
+          fileName: audioData.fileName,
+          mimeType: audioData.mimeType
+        } : null,
         dateAdded: new Date(),
         totalWords: words.length,
         knownWords: 0,
         comprehension: 0
-      });
+      };
       
-      setText(content);
-      setTextStats({
-        totalWords: words.length,
-        knownWords: 0,
-        comprehension: 0
-      });
+      console.log('Creating text with:', textData);
+      
+      const newText = await createText(textData);
+      console.log('Created text:', newText);
+      
+      if (newText._id) {
+        window.location.href = `/texts/${newText._id}`;
+      } else {
+        throw new Error('No text ID returned from creation');
+      }
     } catch (error) {
       console.error('Failed to create text:', error);
-      setError('Failed to upload text. Please try again.');
+      setError(`Failed to upload text: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -133,6 +162,26 @@ export default function TextProcessor() {
       </div>
 
       <FileUpload onFileContent={handleFileContent} />
+      <AudioUpload onAudioUpload={handleAudioUpload} />
+
+      <button 
+        className="btn btn-primary mt-4"
+        onClick={handleSubmit}
+        disabled={isLoading || !title || !fileData}
+      >
+        {isLoading ? (
+          <>
+            <span className="loading loading-spinner loading-sm"></span>
+            Uploading...
+          </>
+        ) : (
+          'Upload Text and Audio'
+        )}
+      </button>
+
+      {error && (
+        <div className="text-error mt-2">{error}</div>
+      )}
 
       {isLoading && (
         <div className="flex justify-center">

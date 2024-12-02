@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { fetchText, fetchFlashcards, createFlashcard, updateFlashcard, updateTextStats } from '@/lib/utils';
 import WordModal from '@/app/components/WordModal';
+import AudioPlayer from '@/app/components/AudioPlayer';
 
 export default function TextView() {
   const params = useParams();
@@ -23,6 +24,8 @@ export default function TextView() {
         fetchText(params.id),
         fetchFlashcards()
       ]);
+      console.log('Loaded text data:', textData);
+      console.log('Audio data:', textData?.audio);
       setText(textData);
       setFlashcards(cardsData);
     } catch (error) {
@@ -150,11 +153,17 @@ export default function TextView() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{text?.title}</h1>
+        <h1 className="text-2xl font-bold">{text?.title || 'Loading...'}</h1>
         <Link href="/texts" className="btn btn-ghost">
           Back to Texts
         </Link>
       </div>
+
+      {text?.audio?.url && (
+        <div className="mb-8">
+          <AudioPlayer audioUrl={text.audio.url} />
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center">
