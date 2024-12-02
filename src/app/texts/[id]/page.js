@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { fetchText, fetchFlashcards, createFlashcard, updateFlashcard, updateTextStats } from '@/lib/utils';
@@ -16,6 +16,8 @@ export default function TextView() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCollectionSelector, setShowCollectionSelector] = useState(false);
   const [collection, setCollection] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const speechSynthesis = typeof window !== 'undefined' ? window.speechSynthesis : null;
 
   useEffect(() => {
     loadData();
@@ -192,6 +194,35 @@ export default function TextView() {
     }
   };
 
+  const handleSpeak = () => {
+    if (!text?.content || !speechSynthesis) return;
+
+    // Stop any ongoing speech
+    speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text.content);
+    utterance.rate = 1.0; // Normal speed
+    utterance.pitch = 1.0; // Normal pitch
+    
+    // Optional: Try to set Korean language
+    utterance.lang = 'ko-KR';
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    speechSynthesis.speak(utterance);
+  };
+
+  // Stop speaking when component unmounts
+  useEffect(() => {
+    return () => {
+      if (speechSynthesis) {
+        speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -221,6 +252,12 @@ export default function TextView() {
       {text?.audio?.url && (
         <div className="mb-8">
           <AudioPlayer audioUrl={text.audio.url} />
+          <button 
+            className={`btn ${isSpeaking ? 'btn-error' : 'btn-primary'} mt-4`}
+            onClick={handleSpeak}
+          >
+            {isSpeaking ? 'Stop Speaking' : 'Read Text'}
+          </button>
         </div>
       )}
 
