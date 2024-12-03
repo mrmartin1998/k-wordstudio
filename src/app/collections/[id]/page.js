@@ -38,8 +38,6 @@ export default function CollectionView() {
       });
 
       if (!response.ok) throw new Error('Failed to remove text from collection');
-      
-      // Refresh collection data
       loadCollection();
     } catch (error) {
       console.error('Failed to remove text:', error);
@@ -56,39 +54,40 @@ export default function CollectionView() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <Link href="/collections" className="btn btn-ghost mb-2">
-            ← Back to Collections
-          </Link>
-          <h1 className="text-2xl font-bold">{collection.name}</h1>
-          <p className="text-base-content/70">{collection.description}</p>
-        </div>
+      <div className="flex flex-col items-center mb-4">
+        <h1 className="text-2xl font-bold mb-2">{collection.name}</h1>
+        <p className="text-base-content/70 text-center mb-2">{collection.description}</p>
+        <Link 
+          href="/collections" 
+          className="btn btn-primary btn-sm"
+        >
+          ← Back to Collections
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
         <div className="stats shadow">
-          <div className="stat">
-            <div className="stat-title">Total Texts</div>
-            <div className="stat-value">{collection.stats?.totalTexts || 0}</div>
+          <div className="stat py-2">
+            <div className="stat-title text-sm">Total Texts</div>
+            <div className="stat-value text-2xl">{collection.stats?.totalTexts || 0}</div>
           </div>
-          <div className="stat">
-            <div className="stat-title">Average Comprehension</div>
-            <div className="stat-value">
+          <div className="stat py-2">
+            <div className="stat-title text-sm">Average Comprehension</div>
+            <div className="stat-value text-2xl">
               {Math.round(collection.stats?.averageComprehension || 0)}%
             </div>
           </div>
         </div>
 
         <div className="stats shadow">
-          <div className="stat">
-            <div className="stat-title">Difficulty Distribution</div>
-            <div className="stat-desc mt-2">
+          <div className="stat py-2">
+            <div className="stat-title text-sm">Difficulty Distribution</div>
+            <div className="stat-desc mt-1">
               {Object.entries(collection.stats?.difficultyDistribution || {}).map(([level, count]) => (
                 count > 0 && (
                   <div key={level} className="flex justify-between items-center mb-1">
                     <span>{level}</span>
-                    <span className="badge">{count}</span>
+                    <span className="badge badge-sm">{count}</span>
                   </div>
                 )
               ))}
@@ -100,11 +99,11 @@ export default function CollectionView() {
       <div className="divider">Texts in Collection</div>
 
       {collection?.texts?.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {collection.texts.map(text => (
             <div key={text._id} className="card bg-base-200 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title">{text.title}</h2>
+              <div className="card-body p-4">
+                <h2 className="card-title text-lg">{text.title}</h2>
                 <div className="badge badge-outline">{text.difficulty}</div>
                 <p className="text-sm mt-2">
                   Comprehension: {text.comprehension || 0}%
