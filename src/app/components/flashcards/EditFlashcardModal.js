@@ -44,50 +44,53 @@ export default function EditFlashcardModal({ isOpen, card, onSave, onClose }) {
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box">
-        <h3 className="font-bold text-lg">Edit Flashcard</h3>
+      <div className="modal-box w-[85%] md:w-[400px] max-w-sm mx-auto p-3 md:p-4">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-bold text-base md:text-lg">Edit Flashcard</h3>
+          <button onClick={onClose} className="btn btn-ghost btn-sm">✕</button>
+        </div>
         
-        <div className="form-control">
-          <label className="label">Word</label>
+        <div className="form-control mb-2">
+          <label className="label py-1">Word</label>
           <input
             type="text"
-            className="input input-bordered"
+            className="input input-bordered w-full text-sm md:text-base"
             value={word}
             onChange={(e) => setWord(e.target.value)}
           />
         </div>
 
-        <div className="form-control">
-          <label className="label">Translation</label>
+        <div className="form-control mb-2">
+          <label className="label py-1">Translation</label>
           <input
             type="text"
-            className="input input-bordered"
+            className="input input-bordered w-full text-sm md:text-base"
             value={translation}
             onChange={(e) => setTranslation(e.target.value)}
           />
         </div>
 
-        <div className="form-control">
-          <label className="label">Context</label>
+        <div className="form-control mb-2">
+          <label className="label py-1">Context</label>
           <textarea
-            className="textarea textarea-bordered"
+            className="textarea textarea-bordered w-full min-h-[60px] md:min-h-[100px] text-sm md:text-base"
             value={context}
             onChange={(e) => setContext(e.target.value)}
           />
         </div>
 
-        <div className="form-control mt-4">
-          <label className="label">
-            <span className="label-text">Level</span>
+        <div className="form-control mt-2">
+          <label className="label py-1 justify-between">
+            <span className="label-text text-sm md:text-base">Level</span>
             <span className={`badge ${getLevelColor(level)}`}>
               {getLevelText(level)}
             </span>
           </label>
-          <div className="btn-group">
+          <div className="grid grid-cols-3 gap-1 w-full">
             {[0, 1, 2, 3, 4, 5].map((l) => (
               <button
                 key={l}
-                className={`btn btn-sm ${level === l ? 'btn-active' : ''}`}
+                className={`btn btn-xs md:btn-sm ${level === l ? 'btn-active' : ''}`}
                 onClick={() => setLevel(l)}
               >
                 {getLevelText(l)}
@@ -96,14 +99,14 @@ export default function EditFlashcardModal({ isOpen, card, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="modal-action">
+        <div className="modal-action mt-4 gap-2">
           <button 
-            className="btn btn-primary" 
+            className="btn btn-sm md:btn-md btn-primary flex-1" 
             onClick={() => onSave({ word, translation, context, level })}
           >
             Save
           </button>
-          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-sm md:btn-md flex-1" onClick={onClose}>Cancel</button>
         </div>
       </div>
     </div>

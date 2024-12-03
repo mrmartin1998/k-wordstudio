@@ -217,59 +217,75 @@ export default function Flashcards() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Flashcards</h1>
-        <div className="flex gap-4">
-          <button className="btn btn-primary">Add Word</button>
-          <button className="btn btn-secondary">Review</button>
+    <div className="container mx-auto px-4">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-6">
+        <h1 className="text-xl md:text-2xl font-bold">Flashcards</h1>
+        <div className="flex gap-2 w-full md:w-auto">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="btn btn-primary flex-1 md:flex-none"
+          >
+            Add Word
+          </button>
+          <Link href="/review" className="btn btn-secondary flex-1 md:flex-none">
+            Review
+          </Link>
         </div>
       </div>
 
-      <div className="flex gap-4 mb-4">
-        <button className="btn btn-sm" onClick={handleSelectAll}>
-          {selectedCards.size === filteredCards.length ? 'Deselect All' : 'Select All'}
-        </button>
-        <input
-          type="text"
-          placeholder="Search flashcards..."
-          className="input input-bordered w-full max-w-xs"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <select className="select select-bordered">
-          <option>Date Added</option>
-          <option>Level</option>
-        </select>
+      <div className="flex flex-col md:flex-row gap-3 mb-4">
+        {sortingControls}
+        {bulkActionControls}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCards.map((card, index) => (
-          <div key={index} className="card bg-base-200 shadow-lg">
+        {filteredCards.map((card) => (
+          <div key={card._id} className="card bg-base-200">
             <div className="card-body">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start">
                 <h2 className="card-title">{card.word}</h2>
-                <span className={`badge ${getLevelColor(card.level)}`}>
+                <button 
+                  className={`badge ${getLevelColor(card.level)} cursor-pointer`}
+                  onClick={() => handleLevelChange(card._id)}
+                >
                   {getLevelText(card.level)}
-                </span>
+                </button>
               </div>
-              <p className="text-sm text-base-content/70">{card.translation}</p>
-              <p className="text-xs text-base-content/50">Context: {card.context}</p>
-              <p className="text-xs text-base-content/50">Added: {new Date(card.dateAdded).toLocaleDateString()}</p>
-              <div className="card-actions justify-end mt-4">
-                <button className="btn btn-sm btn-info" onClick={() => handleEditCard(card)}>Edit</button>
-                <button className="btn btn-sm btn-error" onClick={() => handleDelete(card._id)}>Delete</button>
+              <p>{card.translation}</p>
+              {card.context && <p className="text-sm opacity-70">{card.context}</p>}
+              <div className="card-actions justify-end">
+                <button 
+                  className="btn btn-sm btn-info"
+                  onClick={() => handleEditCard(card)}
+                >
+                  Edit
+                </button>
+                <button 
+                  className="btn btn-sm btn-error"
+                  onClick={() => handleDelete(card._id)}
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>
         ))}
       </div>
 
+      <WordModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveFlashcard}
+      />
+
       <EditFlashcardModal
         isOpen={isEditModalOpen}
         card={currentCard}
         onSave={handleSaveCard}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setCurrentCard(null);
+        }}
       />
     </div>
   );
