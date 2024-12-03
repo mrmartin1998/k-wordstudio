@@ -268,7 +268,7 @@ export default function ReviewContent() {
           </Link>
         </div>
       ) : reviewQueue.length > 0 ? (
-        <div className="card bg-base-200 shadow-xl max-w-2xl mx-auto">
+        <div className="card bg-base-200 shadow-xl max-w-2xl mx-auto relative z-0">
           <div className="card-body">
             <div className="text-center relative">
               <button 
