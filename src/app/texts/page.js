@@ -111,8 +111,8 @@ export default function Texts() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Saved Texts</h1>
-        <Link href="/texts/upload" className="btn btn-primary w-full md:w-auto mt-4 md:mt-0">
+        <h1 className="text-2xl font-bold mb-4 md:mb-0">Saved Texts</h1>
+        <Link href="/texts/upload" className="btn btn-primary w-full md:w-auto">
           Add Text
         </Link>
       </div>
@@ -151,7 +151,7 @@ export default function Texts() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center">
+        <div className="flex justify-center p-8">
           <span className="loading loading-spinner loading-lg"></span>
         </div>
       ) : filteredTexts.length > 0 ? (
@@ -164,7 +164,7 @@ export default function Texts() {
                   {text.content?.slice(0, 100)}...
                 </p>
                 
-                <div className="stats stats-vertical bg-base-300 rounded-box">
+                <div className="stats stats-vertical sm:stats-horizontal bg-base-300 rounded-box">
                   <div className="stat">
                     <div className="stat-title">Total Words</div>
                     <div className="stat-value text-lg">{text.totalWords || 0}</div>
