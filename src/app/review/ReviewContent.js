@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { fetchFlashcards, fetchTexts, updateFlashcard } from '@/lib/utils';
+import EditFlashcardModal from '@/app/components/flashcards/EditFlashcardModal';
 
 export default function ReviewContent() {
   const [cards, setCards] = useState([]);
@@ -15,6 +16,10 @@ export default function ReviewContent() {
   const [texts, setTexts] = useState([]);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [autoPlayAudio, setAutoPlayAudio] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentEditCard, setCurrentEditCard] = useState(null);
 
   useEffect(() => {
     loadInitialData();
@@ -88,13 +93,44 @@ export default function ReviewContent() {
     }
   };
 
+  const handleSpeak = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR'; // Set to Korean for Korean words
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleEditCard = (card) => {
+    setCurrentEditCard(card);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveCard = async (updatedCard) => {
+    try {
+      const updated = await updateFlashcard(currentEditCard._id, {
+        ...updatedCard,
+        lastModified: new Date()
+      });
+      
+      setReviewQueue(prevQueue => 
+        prevQueue.map(card => card._id === currentEditCard._id ? updated : card)
+      );
+      
+      setIsEditModalOpen(false);
+      setCurrentEditCard(null);
+    } catch (error) {
+      console.error('Failed to update flashcard:', error);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Review</h1>
-        <Link href="/flashcards" className="btn btn-ghost">
-          Back to Flashcards
-        </Link>
+        <div className="flex gap-4 items-center">
+          <Link href="/flashcards" className="btn btn-ghost">
+            Back to Flashcards
+          </Link>
+        </div>
       </div>
 
       {cards.length === 0 ? (
@@ -107,8 +143,28 @@ export default function ReviewContent() {
       ) : reviewQueue.length > 0 ? (
         <div className="card bg-base-200 shadow-xl max-w-2xl mx-auto">
           <div className="card-body">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">{reviewQueue[currentIndex].word}</h2>
+            <div className="text-center relative">
+              <button 
+                className="btn btn-ghost btn-circle absolute top-0 right-0"
+                onClick={() => handleEditCard(reviewQueue[currentIndex])}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+
+              <h2 className="text-2xl font-bold mb-2">{reviewQueue[currentIndex].word}</h2>
+              <div className="flex justify-center items-center mb-4">
+                <button 
+                  className="btn btn-ghost btn-circle"
+                  onClick={() => handleSpeak(reviewQueue[currentIndex].word)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </button>
+              </div>
+
               {showAnswer ? (
                 <>
                   <p className="text-xl mb-4">{reviewQueue[currentIndex].translation}</p>
@@ -215,6 +271,16 @@ export default function ReviewContent() {
           </div>
         </div>
       )}
+
+      <EditFlashcardModal
+        isOpen={isEditModalOpen}
+        card={currentEditCard}
+        onSave={handleSaveCard}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setCurrentEditCard(null);
+        }}
+      />
     </div>
   );
 } 
