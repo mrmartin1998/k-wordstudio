@@ -419,13 +419,13 @@ export default function TextView() {
             Add to Collection
           </button>
         )}
-        <Link href="/texts" className="btn btn-ghost">
+        <Link href="/texts" className="btn btn-ghost mb-1">
           Back to Texts
         </Link>
       </div>
       <div className="mb-4">
         <button
-          className="btn btn-primary w-full sm:w-auto"
+          className="btn btn-primary w-full sm:w-auto mb-1"
           onClick={() => setIsSettingsOpen(!isSettingsOpen)}
         >
           {isSettingsOpen ? 'Hide Settings' : 'Text Settings'}

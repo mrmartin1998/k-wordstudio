@@ -6,9 +6,9 @@ import { fetchCollections, createCollection, deleteCollection } from '@/lib/util
 export default function Collections() {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [newCollectionDesc, setNewCollectionDesc] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadCollections();
@@ -51,31 +51,26 @@ export default function Collections() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Text Collections</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
-        >
-          Create Collection
-        </button>
-      </div>
+      <h1 className="text-xl font-bold mb-1">Text Collections</h1>
+      <button 
+        className="btn btn-primary w-full mb-4"
+        onClick={() => setShowCreateModal(true)}
+      >
+        Create Collection
+      </button>
 
       {loading ? (
         <div className="flex justify-center">
-          <span className="loading loading-spinner loading-lg"></span>
+          <span className="loading loading-spinner loading-md"></span>
         </div>
       ) : collections.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-2">
           {collections.map(collection => (
-            <div key={collection._id} className="card bg-base-200 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title">{collection.name}</h2>
-                <p className="text-sm text-base-content/70">
-                  {collection.description}
-                </p>
+            <div key={collection._id} className="card bg-base-200 shadow-sm">
+              <div className="card-body p-3">
+                <h2 className="text-lg font-medium mb-2">{collection.name}</h2>
                 
-                <div className="stats bg-base-300 rounded-box">
+                <div className="stats stats-vertical bg-base-300 rounded-box p-2 mb-2">
                   <div className="stat">
                     <div className="stat-title">Total Texts</div>
                     <div className="stat-value text-lg">
@@ -90,16 +85,16 @@ export default function Collections() {
                   </div>
                 </div>
 
-                <div className="card-actions justify-end mt-4">
+                <div className="card-actions justify-end">
                   <Link 
                     href={`/collections/${collection._id}`} 
-                    className="btn btn-primary btn-sm"
+                    className="btn btn-primary"
                   >
                     View
                   </Link>
                   <button
                     onClick={() => handleDeleteCollection(collection._id)}
-                    className="btn btn-error btn-sm"
+                    className="btn btn-error"
                   >
                     Delete
                   </button>
@@ -109,8 +104,8 @@ export default function Collections() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-10">
-          <p className="text-lg mb-4">No collections created yet</p>
+        <div className="text-center py-8">
+          <p className="text-base mb-2">No collections created yet</p>
           <button 
             className="btn btn-primary"
             onClick={() => setShowCreateModal(true)}
@@ -120,7 +115,7 @@ export default function Collections() {
         </div>
       )}
 
-      {/* Create Collection Modal */}
+      {/* Modal remains unchanged */}
       {showCreateModal && (
         <div className="modal modal-open">
           <div className="modal-box">
