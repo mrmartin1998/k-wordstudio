@@ -10,6 +10,7 @@ export default function Flashcards() {
   const [flashcards, setFlashcards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [sortBy, setSortBy] = useState('dateAdded');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -233,6 +234,7 @@ export default function Flashcards() {
           type="text"
           placeholder="Search flashcards..."
           className="input input-bordered w-full max-w-xs"
+          value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <select className="select select-bordered">
