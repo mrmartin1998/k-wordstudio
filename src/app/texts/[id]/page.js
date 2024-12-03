@@ -432,48 +432,46 @@ export default function TextView() {
         </div>
       </div>
 
-      {text?.audio?.url && (
-        <div className="mb-8">
-          <div className="flex flex-col gap-4 mt-4">
-            {voices.length > 0 && (
-              <select 
-                className="select select-bordered w-full max-w-xs"
-                value={selectedVoice?.name || ''}
-                onChange={(e) => {
-                  const voice = voices.find(v => v.name === e.target.value);
-                  setSelectedVoice(voice);
-                }}
-              >
-                {voices.map(voice => (
-                  <option key={voice.name} value={voice.name}>
-                    {voice.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Speed:</span>
-              {speedOptions.map((speed) => (
-                <button
-                  key={speed}
-                  onClick={() => setSpeechRate(speed)}
-                  className={`btn btn-sm ${speechRate === speed ? 'btn-primary' : 'btn-ghost'}`}
-                >
-                  {speed}x
-                </button>
-              ))}
-            </div>
-
-            <button 
-              className={`btn ${isSpeaking ? 'btn-error' : 'btn-primary'}`}
-              onClick={handleSpeakButtonClick}
+      <div className="mb-8">
+        <div className="flex flex-col gap-4 mt-4">
+          {voices.length > 0 && (
+            <select 
+              className="select select-bordered w-full max-w-xs"
+              value={selectedVoice?.name || ''}
+              onChange={(e) => {
+                const voice = voices.find(v => v.name === e.target.value);
+                setSelectedVoice(voice);
+              }}
             >
-              {isSpeaking ? 'Stop Speaking' : 'Read Text'}
-            </button>
+              {voices.map(voice => (
+                <option key={voice.name} value={voice.name}>
+                  {voice.name}
+                </option>
+              ))}
+            </select>
+          )}
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Speed:</span>
+            {speedOptions.map((speed) => (
+              <button
+                key={speed}
+                onClick={() => setSpeechRate(speed)}
+                className={`btn btn-sm ${speechRate === speed ? 'btn-primary' : 'btn-ghost'}`}
+              >
+                {speed}x
+              </button>
+            ))}
           </div>
+
+          <button 
+            className={`btn ${isSpeaking ? 'btn-error' : 'btn-primary'}`}
+            onClick={handleSpeakButtonClick}
+          >
+            {isSpeaking ? 'Stop Speaking' : 'Read Text'}
+          </button>
         </div>
-      )}
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center">
