@@ -325,10 +325,10 @@ export default function TextView() {
     const words = text.content.split(/\s+/);
     const totalWords = words.length;
     
-    // Count unique words that have flashcards for this text
+    // Only count words with flashcards that have been reviewed and learned (level > 0)
     const knownWords = new Set(
       flashcards
-        .filter(card => card.sourceTextId === params.id)
+        .filter(card => card.sourceTextId === params.id && card.level > 3)
         .map(card => card.word.toLowerCase())
     ).size;
 
