@@ -112,13 +112,17 @@ export default function Texts() {
     <div className="container mx-auto p-4">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Saved Texts</h1>
-        <div className="flex gap-4 mt-4 md:mt-0">
-          <Link href="/texts/upload" className="btn btn-primary">
-            Add Text
-          </Link>
-          <div className="flex gap-2">
+        <Link href="/texts/upload" className="btn btn-primary w-full md:w-auto mt-4 md:mt-0">
+          Add Text
+        </Link>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="bg-base-200 rounded-lg p-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
             <select 
-              className="select select-bordered"
+              className="select select-bordered w-full"
               value={filterDifficulty}
               onChange={(e) => setFilterDifficulty(e.target.value)}
             >
@@ -129,9 +133,11 @@ export default function Texts() {
               <option value="Advanced">Advanced</option>
               <option value="Expert">Expert</option>
             </select>
+          </div>
 
+          <div className="flex-1">
             <select 
-              className="select select-bordered"
+              className="select select-bordered w-full"
               value={filterCollection}
               onChange={(e) => setFilterCollection(e.target.value)}
             >
