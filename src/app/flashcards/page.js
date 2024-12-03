@@ -4,6 +4,7 @@ import Link from 'next/link';
 import WordModal from '@/app/components/WordModal';
 import { fetchFlashcards, createFlashcard, updateFlashcard, deleteFlashcard } from '@/lib/utils';
 import EditFlashcardModal from '@/app/components/flashcards/EditFlashcardModal';
+import { getLevelColor, getLevelText } from '@/lib/utils';
 
 export default function Flashcards() {
   const [flashcards, setFlashcards] = useState([]);
@@ -123,30 +124,6 @@ export default function Flashcards() {
       card.notes?.toLowerCase().includes(filter.toLowerCase())
     )
   );
-
-  const getLevelColor = (level) => {
-    switch(level) {
-      case 0: return 'badge-error';    // Red - New
-      case 1: return 'badge-warning';  // Orange - Beginning
-      case 2: return 'badge-info';     // Blue - Learning
-      case 3: return 'badge-primary';  // Purple - Intermediate
-      case 4: return 'badge-secondary';// Gray - Advanced
-      case 5: return 'badge-success';  // Green - Known
-      default: return 'badge-error';
-    }
-  };
-
-  const getLevelText = (level) => {
-    switch(level) {
-      case 0: return 'New';
-      case 1: return 'Beginning';
-      case 2: return 'Learning';
-      case 3: return 'Intermediate';
-      case 4: return 'Advanced';
-      case 5: return 'Known';
-      default: return 'New';
-    }
-  };
 
   const handleSelectAll = () => {
     if (selectedCards.size === filteredCards.length) {
@@ -279,7 +256,7 @@ export default function Flashcards() {
               <p className="text-xs text-base-content/50">Added: {new Date(card.dateAdded).toLocaleDateString()}</p>
               <div className="card-actions justify-end mt-4">
                 <button className="btn btn-sm btn-info" onClick={() => handleEditCard(card)}>Edit</button>
-                <button className="btn btn-sm btn-error" onClick={() => handleDeleteCard(card)}>Delete</button>
+                <button className="btn btn-sm btn-error" onClick={() => handleDelete(card._id)}>Delete</button>
               </div>
             </div>
           </div>

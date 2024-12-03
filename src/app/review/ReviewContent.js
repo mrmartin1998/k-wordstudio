@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { fetchFlashcards, fetchTexts, updateFlashcard } from '@/lib/utils';
 import EditFlashcardModal from '@/app/components/flashcards/EditFlashcardModal';
+import ReviewSummary from '@/app/components/review/ReviewSummary';
+import { getLevelColor, getLevelText } from '@/lib/utils';
 
 export default function ReviewContent() {
   const [cards, setCards] = useState([]);
@@ -20,6 +22,11 @@ export default function ReviewContent() {
   const [autoPlayAudio, setAutoPlayAudio] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentEditCard, setCurrentEditCard] = useState(null);
+  const [sessionStats, setSessionStats] = useState({
+    totalReviewed: 0,
+    correctCount: 0,
+    levelChanges: Array(6).fill(0)
+  });
 
   useEffect(() => {
     loadInitialData();
@@ -55,23 +62,29 @@ export default function ReviewContent() {
   };
   const handleAnswer = async (correct) => {
     const currentCard = reviewQueue[currentIndex];
-    if (!currentCard || !currentCard._id) {
-      console.error('No valid card found at current index');
-      return;
-    }
+    if (!currentCard || !currentCard._id) return;
 
     try {
+      const oldLevel = currentCard.level || 0;
       const updates = {
         reviewCount: (currentCard.reviewCount || 0) + 1,
         correctCount: (currentCard.correctCount || 0) + (correct ? 1 : 0),
         lastReviewed: new Date(),
         level: correct && currentCard.correctCount % 2 === 0
-          ? Math.min(5, (currentCard.level || 0) + 1)
-          : Math.max(0, (currentCard.level || 0) - 1)
+          ? Math.min(5, oldLevel + 1)
+          : Math.max(0, oldLevel - 1)
       };
 
       const updated = await updateFlashcard(currentCard._id, updates);
       
+      setSessionStats(prev => ({
+        totalReviewed: prev.totalReviewed + 1,
+        correctCount: prev.correctCount + (correct ? 1 : 0),
+        levelChanges: prev.levelChanges.map((count, i) => 
+          i === updates.level ? count + 1 : count
+        )
+      }));
+
       setCards(prevCards => 
         prevCards.map(card => card._id === currentCard._id ? updated : card)
       );
@@ -203,73 +216,88 @@ export default function ReviewContent() {
           </div>
         </div>
       ) : (
-        <div className="card bg-base-200 p-6 max-w-md mx-auto">
-          <h2 className="text-xl mb-4">Start Review Session</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="label">Number of cards</label>
-              <input
-                type="number"
-                value={reviewSize}
-                onChange={(e) => setReviewSize(parseInt(e.target.value))}
-                className="input input-bordered w-full"
-                min="1"
-                max="100"
-              />
-            </div>
-            <div>
-              <label className="label">Level to review</label>
-              <select
-                className="select select-bordered w-full"
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value)}
+        sessionStats.totalReviewed > 0 ? (
+          <ReviewSummary 
+            stats={sessionStats}
+            onRestart={() => {
+              setSessionStats({
+                totalReviewed: 0,
+                correctCount: 0,
+                levelChanges: Array(6).fill(0)
+              });
+              // Re-use your existing review start logic here
+            }}
+            onClose={() => router.push('/flashcards')}
+          />
+        ) : (
+          <div className="card bg-base-200 p-6 max-w-md mx-auto">
+            <h2 className="text-xl mb-4">Start Review Session</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="label">Number of cards</label>
+                <input
+                  type="number"
+                  value={reviewSize}
+                  onChange={(e) => setReviewSize(parseInt(e.target.value))}
+                  className="input input-bordered w-full"
+                  min="1"
+                  max="100"
+                />
+              </div>
+              <div>
+                <label className="label">Level to review</label>
+                <select
+                  className="select select-bordered w-full"
+                  value={selectedLevel}
+                  onChange={(e) => setSelectedLevel(e.target.value)}
+                >
+                  <option value="all">All Levels</option>
+                  <option value="0">Level 0 (New)</option>
+                  <option value="1">Level 1 (Beginning)</option>
+                  <option value="2">Level 2 (Learning)</option>
+                  <option value="3">Level 3 (Intermediate)</option>
+                  <option value="4">Level 4 (Advanced)</option>
+                  <option value="5">Level 5 (Known)</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Text to review</label>
+                <select
+                  className="select select-bordered w-full"
+                  value={selectedText}
+                  onChange={(e) => setSelectedText(e.target.value)}
+                >
+                  <option value="all">All Texts</option>
+                  {texts.map(text => (
+                    <option key={text.id} value={text.id}>{text.title}</option>
+                  ))}
+                </select>
+              </div>
+              <button 
+                className="btn btn-primary w-full"
+                onClick={() => {
+                  let filtered = selectedLevel === 'all'
+                    ? cards
+                    : cards.filter(card => card.level === parseInt(selectedLevel));
+                  
+                  if (selectedText !== 'all') {
+                    filtered = filtered.filter(card => card.sourceTextId === selectedText);
+                  }
+                  
+                  const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, reviewSize);
+                  const firstHalf = [...shuffled];
+                  const secondHalf = [...shuffled];
+                  secondHalf.sort(() => Math.random() - 0.5);
+                  setReviewQueue([...firstHalf, ...secondHalf]);
+                  setCurrentIndex(0);
+                  setShowAnswer(false);
+                }}
               >
-                <option value="all">All Levels</option>
-                <option value="0">Level 0 (New)</option>
-                <option value="1">Level 1 (Beginning)</option>
-                <option value="2">Level 2 (Learning)</option>
-                <option value="3">Level 3 (Intermediate)</option>
-                <option value="4">Level 4 (Advanced)</option>
-                <option value="5">Level 5 (Known)</option>
-              </select>
+                Start Review
+              </button>
             </div>
-            <div>
-              <label className="label">Text to review</label>
-              <select
-                className="select select-bordered w-full"
-                value={selectedText}
-                onChange={(e) => setSelectedText(e.target.value)}
-              >
-                <option value="all">All Texts</option>
-                {texts.map(text => (
-                  <option key={text.id} value={text.id}>{text.title}</option>
-                ))}
-              </select>
-            </div>
-            <button 
-              className="btn btn-primary w-full"
-              onClick={() => {
-                let filtered = selectedLevel === 'all'
-                  ? cards
-                  : cards.filter(card => card.level === parseInt(selectedLevel));
-                
-                if (selectedText !== 'all') {
-                  filtered = filtered.filter(card => card.sourceTextId === selectedText);
-                }
-                
-                const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, reviewSize);
-                const firstHalf = [...shuffled];
-                const secondHalf = [...shuffled];
-                secondHalf.sort(() => Math.random() - 0.5);
-                setReviewQueue([...firstHalf, ...secondHalf]);
-                setCurrentIndex(0);
-                setShowAnswer(false);
-              }}
-            >
-              Start Review
-            </button>
           </div>
-        </div>
+        )
       )}
 
       <EditFlashcardModal

@@ -40,7 +40,10 @@
    - ✅ Audio integration in reviews
    - 🔴 Auto-promotion system
    - 🔴 Review statistics display
+   - 🔴 Random review order
    - 🔴 Progress indicators
+   - 🔴 Review only with sound
+   - 🔴 Review only translated word
 
 3. Advanced Review System 🔴
    - 🔴 Spaced repetition algorithm

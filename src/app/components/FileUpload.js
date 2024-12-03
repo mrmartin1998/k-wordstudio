@@ -18,12 +18,7 @@ export default function FileUpload({ onFileContent }) {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target.result;
-      onFileContent({
-        title: fileName,
-        content: text,
-        dateAdded: new Date()
-      });
+      onFileContent(e.target.result, fileName);
     };
     reader.onerror = () => {
       setError('Error reading file');

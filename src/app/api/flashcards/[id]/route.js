@@ -29,4 +29,28 @@ export async function PUT(request, { params }) {
       { status: 500 }
     );
   }
-} 
+}
+
+export async function DELETE(request, { params }) {
+  try {
+    await dbConnect();
+    const { id } = params;
+    
+    const flashcard = await Flashcard.findByIdAndDelete(id);
+    
+    if (!flashcard) {
+      return NextResponse.json(
+        { error: 'Flashcard not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting flashcard:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete flashcard' },
+      { status: 500 }
+    );
+  }
+}

@@ -122,4 +122,28 @@ export async function deleteCollection(id) {
   });
   if (!res.ok) throw new Error('Failed to delete collection');
   return res.json();
-} 
+}
+
+export const getLevelColor = (level) => {
+  switch(level) {
+    case 0: return 'badge-error';    // Red - New
+    case 1: return 'badge-warning';  // Orange - Beginning
+    case 2: return 'badge-info';     // Blue - Learning
+    case 3: return 'badge-primary';  // Purple - Intermediate
+    case 4: return 'badge-secondary';// Gray - Advanced
+    case 5: return 'badge-success';  // Green - Known
+    default: return 'badge-error';
+  }
+};
+
+export const getLevelText = (level) => {
+  switch(level) {
+    case 0: return 'New';
+    case 1: return 'Beginning';
+    case 2: return 'Learning';
+    case 3: return 'Intermediate';
+    case 4: return 'Advanced';
+    case 5: return 'Known';
+    default: return 'New';
+  }
+}; 

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { fetchFlashcards, fetchTexts } from '@/lib/utils';
+import { getLevelColor } from '@/lib/utils';
 
 export default function StatsOverview() {
   const [stats, setStats] = useState({
@@ -66,16 +67,4 @@ export default function StatsOverview() {
       </div>
     </div>
   );
-}
-
-function getLevelColor(level) {
-  switch(level) {
-    case 0: return 'badge-error';
-    case 1: return 'badge-warning';
-    case 2: return 'badge-info';
-    case 3: return 'badge-primary';
-    case 4: return 'badge-secondary';
-    case 5: return 'badge-success';
-    default: return '';
-  }
 } 

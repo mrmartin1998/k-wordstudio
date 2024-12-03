@@ -14,7 +14,9 @@ export default function TextUpload() {
         </div>
       </div>
       
-      <TextProcessor />
+      <div className="max-w-2xl mx-auto">
+        <TextProcessor />
+      </div>
     </div>
   );
 } 
