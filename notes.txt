@@ -1,7 +1,0 @@
-Remove audio upload
-When adding vocabulary to the text the known words should only be the known words
-Add audio option for texts
-Ensure known words count only includes truly known words, not just added words
-Remove audio file upload from text upload form since we're using text-to-speech
-Fix search functionality in flashcards page (setSearchTerm undefined error)
-Add ability to review flashcards from specific texts

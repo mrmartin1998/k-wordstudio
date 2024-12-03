@@ -27,6 +27,8 @@ export default function ReviewContent() {
     correctCount: 0,
     levelChanges: Array(6).fill(0)
   });
+  const [reviewMode, setReviewMode] = useState('normal');
+  const [currentStreak, setCurrentStreak] = useState(0);
 
   useEffect(() => {
     loadInitialData();
@@ -63,6 +65,8 @@ export default function ReviewContent() {
   const handleAnswer = async (correct) => {
     const currentCard = reviewQueue[currentIndex];
     if (!currentCard || !currentCard._id) return;
+
+    setCurrentStreak(prev => correct ? prev + 1 : 0);
 
     try {
       const oldLevel = currentCard.level || 0;
@@ -164,6 +168,87 @@ export default function ReviewContent() {
     setShowAnswer(false);
   };
 
+  const renderCardContent = () => {
+    const currentCard = reviewQueue[currentIndex];
+    if (!currentCard) return null;
+
+    switch (reviewMode) {
+      case 'sound-only':
+        return (
+          <div className="text-center">
+            {!showAnswer ? (
+              <div className="mb-4">
+                <button 
+                  className="btn btn-circle btn-lg"
+                  onClick={() => handleSpeak(currentCard.word)}
+                  autoFocus
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </button>
+                <p className="text-sm mt-2">Click to play sound</p>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold mb-4">{currentCard.word}</h2>
+                <p className="text-xl mb-4">{currentCard.translation}</p>
+              </>
+            )}
+          </div>
+        );
+
+      case 'translation-only':
+        return (
+          <div className="text-center">
+            {!showAnswer ? (
+              <h2 className="text-2xl font-bold mb-4">{currentCard.translation}</h2>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold mb-4">{currentCard.word}</h2>
+                <button 
+                  className="btn btn-circle mb-4"
+                  onClick={() => handleSpeak(currentCard.word)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
+        );
+
+      default: // normal mode
+        return (
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">{currentCard.word}</h2>
+            <button 
+              className="btn btn-circle mb-4"
+              onClick={() => handleSpeak(currentCard.word)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </button>
+            {showAnswer && <p className="text-xl mb-4">{currentCard.translation}</p>}
+          </div>
+        );
+    }
+  };
+
+  const ProgressBar = () => {
+    const progress = (currentIndex / reviewQueue.length) * 100;
+    return (
+      <div className="w-full bg-base-300 rounded-full h-2.5 mb-4">
+        <div 
+          className="bg-primary h-2.5 rounded-full transition-all"
+          style={{ width: `${progress}%` }}
+        ></div>
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -195,44 +280,26 @@ export default function ReviewContent() {
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-bold mb-2">{reviewQueue[currentIndex].word}</h2>
-              <div className="flex justify-center items-center mb-4">
-                <button 
-                  className="btn btn-ghost btn-circle"
-                  onClick={() => handleSpeak(reviewQueue[currentIndex].word)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                  </svg>
-                </button>
-              </div>
+              {renderCardContent()}
 
               {showAnswer ? (
-                <>
-                  <p className="text-xl mb-4">{reviewQueue[currentIndex].translation}</p>
-                  {reviewQueue[currentIndex].context && (
-                    <p className="text-sm text-base-content/70 mb-4">
-                      Context: {reviewQueue[currentIndex].context}
-                    </p>
-                  )}
-                  <div className="flex gap-2 justify-center">
-                    <button 
-                      className="btn btn-error"
-                      onClick={() => handleAnswer(false)}
-                    >
-                      ✗ Wrong
-                    </button>
-                    <button 
-                      className="btn btn-success"
-                      onClick={() => handleAnswer(true)}
-                    >
-                      ✓ Correct
-                    </button>
-                  </div>
-                </>
+                <div className="flex gap-2 justify-center mt-4">
+                  <button 
+                    className="btn btn-error"
+                    onClick={() => handleAnswer(false)}
+                  >
+                    ✗ Wrong
+                  </button>
+                  <button 
+                    className="btn btn-success"
+                    onClick={() => handleAnswer(true)}
+                  >
+                    ✓ Correct
+                  </button>
+                </div>
               ) : (
                 <button 
-                  className="btn btn-primary"
+                  className="btn btn-primary mt-4"
                   onClick={() => setShowAnswer(true)}
                 >
                   Show Answer
@@ -302,6 +369,18 @@ export default function ReviewContent() {
                       {text.title}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Review Mode</label>
+                <select
+                  value={reviewMode}
+                  onChange={(e) => setReviewMode(e.target.value)}
+                  className="select select-bordered w-full"
+                >
+                  <option value="normal">Normal Review</option>
+                  <option value="sound-only">Sound Only</option>
+                  <option value="translation-only">Translation Only</option>
                 </select>
               </div>
               <button 
