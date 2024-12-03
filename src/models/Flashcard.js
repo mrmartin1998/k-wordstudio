@@ -8,7 +8,18 @@ const FlashcardSchema = new mongoose.Schema({
   level: { type: Number, default: 0 },
   reviewCount: { type: Number, default: 0 },
   correctCount: { type: Number, default: 0 },
-  lastReviewed: Date
+  lastReviewed: Date,
+  easeFactor: { type: Number, default: 2.5 },
+  interval: { type: Number, default: 0 },
+  nextReview: Date,
+  reviewHistory: [{
+    date: Date,
+    performance: Number,
+    interval: Number,
+    mode: { type: String, enum: ['quick', 'deep'], default: 'quick' }
+  }],
+  notes: String,
+  examples: [String]
 });
 
 export default mongoose.models.Flashcard || mongoose.model('Flashcard', FlashcardSchema); 
