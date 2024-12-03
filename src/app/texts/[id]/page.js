@@ -408,7 +408,7 @@ export default function TextView() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex flex-col sm:flex-row gap-2 mb-2">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         {collection ? (
           <Link href={`/collections/${collection._id}`} className="btn btn-primary">
             {collection.name}
@@ -422,166 +422,131 @@ export default function TextView() {
           Back to Texts
         </Link>
       </div>
-
       <h1 className="text-xl sm:text-2xl font-bold mb-4 text-center sm:text-left">{text?.title || 'Loading...'}</h1>
 
-      <div className="mb-6">
-        <div className="flex flex-col gap-2 mt-2">
-          {voices.length > 0 && (
-            <select 
-              className="select select-bordered w-full max-w-xs text-sm sm:text-base"
-              value={selectedVoice?.name || ''}
-              onChange={(e) => {
-                const voice = voices.find(v => v.name === e.target.value);
-                setSelectedVoice(voice);
-              }}
-            >
-              {voices.map(voice => (
-                <option key={voice.name} value={voice.name}>
-                  {voice.name}
-                </option>
-              ))}
-            </select>
-          )}
-          
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <span className="text-xs sm:text-sm">Speed:</span>
-              {speedOptions.map((speed) => (
-                <button
-                  key={speed}
-                  onClick={() => setSpeechRate(speed)}
-                  className={`btn btn-xs sm:btn-sm ${speechRate === speed ? 'btn-primary' : 'btn-ghost'}`}
+      <div className="card bg-base-200 shadow-xl mb-4">
+        <div className="card-body p-2 sm:p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* Font Size */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Font Size</label>
+              <div className="flex flex-wrap gap-1">
+                <button 
+                  onClick={() => setFontSize('small')} 
+                  className={`btn btn-xs ${fontSize === 'small' ? 'btn-primary' : 'btn-ghost'}`}
                 >
-                  {speed}x
+                  Small
                 </button>
-              ))}
+                <button 
+                  onClick={() => setFontSize('medium')} 
+                  className={`btn btn-xs ${fontSize === 'medium' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  Medium
+                </button>
+                <button 
+                  onClick={() => setFontSize('large')} 
+                  className={`btn btn-xs ${fontSize === 'large' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  Large
+                </button>
+              </div>
             </div>
 
-            <div className="stats bg-base-200 shadow scale-90 sm:scale-100 mx-auto sm:mx-0">
-              <div className="stat p-2 sm:p-4">
-                <div className="stat-title text-xs sm:text-sm">Total Words</div>
-                <div className="stat-value text-base sm:text-lg">{calculateStats().totalWords}</div>
+            {/* Line Height */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Line Height</label>
+              <div className="flex flex-wrap gap-1">
+                <button 
+                  onClick={() => setLineHeight('compact')} 
+                  className={`btn btn-xs ${lineHeight === 'compact' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  Compact
+                </button>
+                <button 
+                  onClick={() => setLineHeight('normal')} 
+                  className={`btn btn-xs ${lineHeight === 'normal' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  Normal
+                </button>
+                <button 
+                  onClick={() => setLineHeight('relaxed')} 
+                  className={`btn btn-xs ${lineHeight === 'relaxed' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  Relaxed
+                </button>
               </div>
-              <div className="stat p-2 sm:p-4">
-                <div className="stat-title text-xs sm:text-sm">Known Words</div>
-                <div className="stat-value text-base sm:text-lg">{calculateStats().knownWords}</div>
+            </div>
+
+            {/* Paragraph Spacing */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Paragraph</label>
+              <div className="flex flex-wrap gap-1">
+                <button 
+                  onClick={() => setParagraphSpacing('tight')} 
+                  className={`btn btn-xs ${paragraphSpacing === 'tight' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  Tight
+                </button>
+                <button 
+                  onClick={() => setParagraphSpacing('normal')} 
+                  className={`btn btn-xs ${paragraphSpacing === 'normal' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  Normal
+                </button>
+                <button 
+                  onClick={() => setParagraphSpacing('loose')} 
+                  className={`btn btn-xs ${paragraphSpacing === 'loose' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  Loose
+                </button>
               </div>
-              <div className="stat p-2 sm:p-4">
-                <div className="stat-title text-xs sm:text-sm">Comprehension</div>
-                <div className="stat-value text-base sm:text-lg">{calculateStats().comprehension}%</div>
+            </div>
+
+            {/* Reading Mode */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Reading Mode</label>
+              <div className="form-control">
+                <label className="label cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="toggle toggle-sm" 
+                    checked={readingMode}
+                    onChange={(e) => setReadingMode(e.target.checked)}
+                  />
+                </label>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center">
-          <span className="loading loading-spinner loading-lg"></span>
+      <div className="mb-6">
+        <div className={getFormattingClasses()}>
+          {renderInteractiveText(text?.content)}
         </div>
-      ) : (
-        <div className="space-y-8">
-          <div className="card bg-base-200 shadow-xl mb-4">
-            <div className="card-body p-2 sm:p-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {/* Font Size */}
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">Font Size</label>
-                  <div className="flex flex-wrap gap-1">
-                    <button 
-                      onClick={() => setFontSize('small')} 
-                      className={`btn btn-xs ${fontSize === 'small' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Small
-                    </button>
-                    <button 
-                      onClick={() => setFontSize('medium')} 
-                      className={`btn btn-xs ${fontSize === 'medium' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Medium
-                    </button>
-                    <button 
-                      onClick={() => setFontSize('large')} 
-                      className={`btn btn-xs ${fontSize === 'large' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Large
-                    </button>
-                  </div>
-                </div>
+      </div>
 
-                {/* Line Height */}
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">Line Height</label>
-                  <div className="flex flex-wrap gap-1">
-                    <button 
-                      onClick={() => setLineHeight('compact')} 
-                      className={`btn btn-xs ${lineHeight === 'compact' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Compact
-                    </button>
-                    <button 
-                      onClick={() => setLineHeight('normal')} 
-                      className={`btn btn-xs ${lineHeight === 'normal' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Normal
-                    </button>
-                    <button 
-                      onClick={() => setLineHeight('relaxed')} 
-                      className={`btn btn-xs ${lineHeight === 'relaxed' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Relaxed
-                    </button>
-                  </div>
-                </div>
-
-                {/* Paragraph Spacing */}
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">Paragraph</label>
-                  <div className="flex flex-wrap gap-1">
-                    <button 
-                      onClick={() => setParagraphSpacing('tight')} 
-                      className={`btn btn-xs ${paragraphSpacing === 'tight' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Tight
-                    </button>
-                    <button 
-                      onClick={() => setParagraphSpacing('normal')} 
-                      className={`btn btn-xs ${paragraphSpacing === 'normal' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Normal
-                    </button>
-                    <button 
-                      onClick={() => setParagraphSpacing('loose')} 
-                      className={`btn btn-xs ${paragraphSpacing === 'loose' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                      Loose
-                    </button>
-                  </div>
-                </div>
-
-                {/* Reading Mode */}
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">Reading Mode</label>
-                  <div className="form-control">
-                    <label className="label cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="toggle toggle-sm" 
-                        checked={readingMode}
-                        onChange={(e) => setReadingMode(e.target.checked)}
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className={getFormattingClasses()}>
-            {renderInteractiveText(text?.content)}
-          </div>
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <span className="text-xs sm:text-sm">Speed:</span>
+          {speedOptions.map((speed) => (
+            <button
+              key={speed}
+              onClick={() => setSpeechRate(speed)}
+              className={`btn btn-xs sm:btn-sm ${speechRate === speed ? 'btn-primary' : 'btn-ghost'}`}
+            >
+              {speed}x
+            </button>
+          ))}
         </div>
-      )}
+
+        <button 
+          className={`btn btn-primary w-full sm:w-auto ${isSpeaking ? 'btn-error' : ''}`} 
+          onClick={handleSpeakButtonClick}
+        >
+          {isSpeaking ? 'Stop' : 'Read Text'}
+        </button>
+      </div>
 
       <WordModal
         isOpen={isModalOpen}
