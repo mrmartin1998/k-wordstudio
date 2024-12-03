@@ -4,7 +4,9 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { fetchText, fetchFlashcards, createFlashcard, updateFlashcard, updateTextStats } from '@/lib/utils';
 import WordModal from '@/app/components/WordModal';
+import AudioPlayer from '@/app/components/AudioPlayer';
 import CollectionSelector from '@/app/components/text/CollectionSelector';
+import FormattingControls from '@/app/components/text/FormattingControls';
 
 export default function TextView() {
   const params = useParams();
@@ -30,6 +32,10 @@ export default function TextView() {
   const monitorIntervalRef = useRef(null);
   const sentencesRef = useRef([]);
   const offsetsRef = useRef([]);
+  const [fontSize, setFontSize] = useState('medium'); // small, medium, large
+  const [lineHeight, setLineHeight] = useState('normal'); // compact, normal, relaxed
+  const [paragraphSpacing, setParagraphSpacing] = useState('normal'); // tight, normal, loose
+  const [readingMode, setReadingMode] = useState(false); // false = normal, true = reading mode
 
   useEffect(() => {
     loadData();
@@ -377,6 +383,29 @@ export default function TextView() {
     }
   };
 
+  const getFormattingClasses = () => {
+    const classes = ['prose', 'max-w-none'];
+    
+    // Font size classes
+    if (fontSize === 'small') classes.push('text-sm');
+    if (fontSize === 'large') classes.push('text-lg');
+    
+    // Line height classes
+    if (lineHeight === 'compact') classes.push('leading-snug');
+    if (lineHeight === 'relaxed') classes.push('leading-relaxed');
+    
+    // Paragraph spacing classes
+    if (paragraphSpacing === 'tight') classes.push('space-y-1');
+    if (paragraphSpacing === 'loose') classes.push('space-y-6');
+    
+    // Reading mode classes
+    if (readingMode) {
+      classes.push('max-w-2xl mx-auto bg-base-100 p-8 shadow-lg');
+    }
+    
+    return classes.join(' ');
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -469,7 +498,17 @@ export default function TextView() {
 
           <div className="card bg-base-200 shadow-xl">
             <div className="card-body">
-              <div className="prose max-w-none">
+              <FormattingControls 
+                fontSize={fontSize}
+                lineHeight={lineHeight}
+                paragraphSpacing={paragraphSpacing}
+                readingMode={readingMode}
+                onFontSizeChange={setFontSize}
+                onLineHeightChange={setLineHeight}
+                onParagraphSpacingChange={setParagraphSpacing}
+                onReadingModeChange={setReadingMode}
+              />
+              <div className={getFormattingClasses()}>
                 {renderInteractiveText(text?.content)}
               </div>
             </div>
