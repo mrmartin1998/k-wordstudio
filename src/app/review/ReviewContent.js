@@ -135,6 +135,35 @@ export default function ReviewContent() {
     }
   };
 
+  const handleStartReview = () => {
+    let filtered = selectedLevel === 'all'
+      ? cards
+      : cards.filter(card => card.level === parseInt(selectedLevel));
+    
+    if (selectedText !== 'all') {
+      filtered = filtered.filter(card => card.sourceTextId === selectedText);
+    }
+
+    // Check if we have any cards after filtering
+    if (filtered.length === 0) {
+      alert('No cards available for the selected criteria');
+      return;
+    }
+    
+    // Limit to reviewSize and ensure we don't exceed available cards
+    const size = Math.min(reviewSize, filtered.length);
+    const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, size);
+    
+    // Create review queue with repeated cards
+    const firstHalf = [...shuffled];
+    const secondHalf = [...shuffled];
+    secondHalf.sort(() => Math.random() - 0.5);
+    
+    setReviewQueue([...firstHalf, ...secondHalf]);
+    setCurrentIndex(0);
+    setShowAnswer(false);
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -263,35 +292,21 @@ export default function ReviewContent() {
               <div>
                 <label className="label">Text to review</label>
                 <select
-                  className="select select-bordered w-full"
                   value={selectedText}
                   onChange={(e) => setSelectedText(e.target.value)}
+                  className="select select-bordered w-full"
                 >
                   <option value="all">All Texts</option>
                   {texts.map(text => (
-                    <option key={text.id} value={text.id}>{text.title}</option>
+                    <option key={text._id} value={text._id}>
+                      {text.title}
+                    </option>
                   ))}
                 </select>
               </div>
               <button 
                 className="btn btn-primary w-full"
-                onClick={() => {
-                  let filtered = selectedLevel === 'all'
-                    ? cards
-                    : cards.filter(card => card.level === parseInt(selectedLevel));
-                  
-                  if (selectedText !== 'all') {
-                    filtered = filtered.filter(card => card.sourceTextId === selectedText);
-                  }
-                  
-                  const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, reviewSize);
-                  const firstHalf = [...shuffled];
-                  const secondHalf = [...shuffled];
-                  secondHalf.sort(() => Math.random() - 0.5);
-                  setReviewQueue([...firstHalf, ...secondHalf]);
-                  setCurrentIndex(0);
-                  setShowAnswer(false);
-                }}
+                onClick={handleStartReview}
               >
                 Start Review
               </button>
