@@ -31,7 +31,11 @@ export default function Texts() {
         const textFlashcards = cardsData.filter(card => card.sourceTextId === text._id);
         const words = text.content.split(/\s+/);
         const totalWords = words.length;
-        const knownWords = new Set(textFlashcards.map(card => card.word.toLowerCase())).size;
+        const knownWords = new Set(
+          textFlashcards
+            .filter(card => card.level >= 3)
+            .map(card => card.word.toLowerCase())
+        ).size;
         const comprehension = totalWords > 0 ? Math.round((knownWords / totalWords) * 100) : 0;
 
         return {
