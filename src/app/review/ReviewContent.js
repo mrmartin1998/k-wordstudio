@@ -31,37 +31,28 @@ export default function ReviewContent() {
   const [currentStreak, setCurrentStreak] = useState(0);
 
   useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  const loadInitialData = async () => {
-    try {
-      const [cardsData, textsData] = await Promise.all([
-        fetchFlashcards(),
-        fetchTexts()
-      ]);
-      setCards(cardsData);
-      setTexts(textsData);
-      
-      const textId = searchParams.get('textId');
-      if (textId) {
-        setSelectedText(textId);
-        const filtered = cardsData.filter(card => card.sourceTextId === textId);
-        if (filtered.length > 0) {
-          const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, reviewSize);
-          const firstHalf = [...shuffled];
-          const secondHalf = [...shuffled];
-          secondHalf.sort(() => Math.random() - 0.5);
-          setReviewQueue([...firstHalf, ...secondHalf]);
-          setCurrentIndex(0);
+    const loadData = async () => {
+      try {
+        const [cardsData, textsData] = await Promise.all([
+          fetchFlashcards(),
+          fetchTexts()
+        ]);
+        setCards(cardsData);
+        setTexts(textsData);
+        
+        // Get textId from URL if present
+        const textId = searchParams.get('textId');
+        if (textId) {
+          setSelectedText(textId);
         }
+      } catch (error) {
+        console.error('Failed to load data:', error);
       }
-    } catch (error) {
-      console.error('Failed to load initial data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    
+    loadData();
+  }, [searchParams]);
+
   const handleAnswer = async (correct) => {
     const currentCard = reviewQueue[currentIndex];
     if (!currentCard || !currentCard._id) return;

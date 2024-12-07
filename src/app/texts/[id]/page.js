@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { fetchText, fetchFlashcards, createFlashcard, updateFlashcard, updateTextStats } from '@/lib/utils';
 import WordModal from '@/app/components/WordModal';
@@ -10,6 +10,7 @@ import FormattingControls from '@/app/components/text/FormattingControls';
 
 export default function TextView() {
   const params = useParams();
+  const router = useRouter();
   const [text, setText] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
   const [selectedWord, setSelectedWord] = useState(null);
@@ -407,11 +408,15 @@ export default function TextView() {
     return classes.join(' ');
   };
 
+  const handleReviewClick = () => {
+    router.push(`/review?textId=${params.id}`);
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         {collection ? (
-          <Link href={`/collections/${collection._id}`} className="btn btn-primary">
+          <Link href={`/collections/${collection._id}`} className="btn btn-primary mb-3">
             {collection.name}
           </Link>
         ) : (
@@ -419,6 +424,12 @@ export default function TextView() {
             Add to Collection
           </button>
         )}
+        <button 
+          onClick={handleReviewClick} 
+          className="btn btn-primary mb-1"
+        >
+          Review Vocabulary
+        </button>
         <Link href="/texts" className="btn btn-ghost mb-1">
           Back to Texts
         </Link>
