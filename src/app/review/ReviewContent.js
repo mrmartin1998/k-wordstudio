@@ -31,6 +31,7 @@ export default function ReviewContent() {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('all');
+  const [wordPerformance, setWordPerformance] = useState({});
 
   useEffect(() => {
     const loadData = async () => {
@@ -71,23 +72,52 @@ export default function ReviewContent() {
 
     try {
       const oldLevel = currentCard.level || 0;
+      let newLevel = oldLevel;
+      let isSecondReview = false;
+      
+      // Update word performance tracking
+      setWordPerformance(prev => {
+        const wordId = currentCard._id;
+        const firstAttempt = !prev[wordId];
+        
+        if (firstAttempt) {
+          // First time seeing this word
+          return { ...prev, [wordId]: { correct } };
+        } else {
+          // Second time seeing this word
+          isSecondReview = true;
+          const firstResult = prev[wordId].correct;
+          
+          // Determine level change based on both attempts
+          if (firstResult && correct) {
+            // Both correct = promote
+            newLevel = Math.min(5, oldLevel + 1);
+          } else if (!firstResult && !correct) {
+            // Both incorrect = demote
+            newLevel = Math.max(0, oldLevel - 1);
+          }
+          // Otherwise level stays the same
+          
+          return prev;
+        }
+      });
+
       const updates = {
         reviewCount: (currentCard.reviewCount || 0) + 1,
         correctCount: (currentCard.correctCount || 0) + (correct ? 1 : 0),
         lastReviewed: new Date(),
-        level: correct && currentCard.correctCount % 2 === 0
-          ? Math.min(5, oldLevel + 1)
-          : Math.max(0, oldLevel - 1)
+        level: newLevel
       };
 
       const updated = await updateFlashcard(currentCard._id, updates);
       
+      // Only update level changes counter on second review if level actually changed
       setSessionStats(prev => ({
         totalReviewed: prev.totalReviewed + 1,
         correctCount: prev.correctCount + (correct ? 1 : 0),
-        levelChanges: prev.levelChanges.map((count, i) => 
-          i === updates.level ? count + 1 : count
-        )
+        levelChanges: isSecondReview && newLevel !== oldLevel
+          ? prev.levelChanges.map((count, i) => i === newLevel ? count + 1 : count)
+          : prev.levelChanges
       }));
 
       setCards(prevCards => 
