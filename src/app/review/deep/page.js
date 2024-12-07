@@ -84,16 +84,11 @@ export default function DeepDiveReview() {
     if (!currentCard || !currentCard._id) return;
 
     try {
-      // Calculate spaced repetition updates
-      const spacingUpdates = calculateNextReview(currentCard, correct ? 5 : 1);
-      
-      // Update card with new spacing and performance data
       const updates = {
-        ...spacingUpdates,
         reviewCount: (currentCard.reviewCount || 0) + 1,
         correctCount: (currentCard.correctCount || 0) + (correct ? 1 : 0),
         lastReviewed: new Date(),
-        level: correct 
+        level: correct && currentCard.correctCount % 2 === 0
           ? Math.min(5, (currentCard.level || 0) + 1)
           : Math.max(0, (currentCard.level || 0) - 1),
         reviewHistory: [
@@ -101,8 +96,8 @@ export default function DeepDiveReview() {
           {
             date: new Date(),
             performance: correct ? 1 : 0,
-            interval: spacingUpdates.interval,
-            mode: 'deep'
+            mode: 'deep',
+            sessionId: sessionStats.startTime.getTime()
           }
         ]
       };
@@ -114,24 +109,19 @@ export default function DeepDiveReview() {
         ...prev,
         cardsReviewed: prev.cardsReviewed + 1,
         correctCount: prev.correctCount + (correct ? 1 : 0),
-        streakCount: correct ? prev.streakCount + 1 : 0,
         levelChanges: prev.levelChanges.map((count, i) => 
           i === updates.level ? count + 1 : count
-        ),
-        performance: [...prev.performance, correct ? 1 : 0]
+        )
       }));
 
       // Move to next card
-      const currentIndex = reviewQueue.findIndex(card => card._id === currentCard._id);
-      if (currentIndex < reviewQueue.length - 1) {
-        setCurrentCard(reviewQueue[currentIndex + 1]);
-      } else {
-        // Session complete
+      if (sessionStats.cardsReviewed + 1 >= reviewQueue.length) {
         setReviewQueue([]);
         setCurrentCard(null);
+      } else {
+        setCurrentCard(reviewQueue[sessionStats.cardsReviewed + 1]);
       }
 
-      // Reset UI state
       setShowAnswer(false);
       setShowContext(false);
 
@@ -163,9 +153,6 @@ export default function DeepDiveReview() {
         const bDate = b.nextReview ? new Date(b.nextReview) : new Date(0);
         return aDate - bDate;
       });
-    } else {
-      // Random order for non-spaced review
-      filtered = filtered.sort(() => Math.random() - 0.5);
     }
 
     // Check if we have cards to review
@@ -174,8 +161,15 @@ export default function DeepDiveReview() {
       return;
     }
 
-    setReviewQueue(filtered);
-    setCurrentCard(filtered[0]);
+    // Create double review queue with different random orders
+    const firstHalf = [...filtered];
+    const secondHalf = [...filtered];
+    secondHalf.sort(() => Math.random() - 0.5); // Shuffle second half independently
+    
+    const fullQueue = [...firstHalf, ...secondHalf];
+
+    setReviewQueue(fullQueue);
+    setCurrentCard(fullQueue[0]);
     setSessionStats({
       startTime: new Date(),
       cardsReviewed: 0,
@@ -187,7 +181,7 @@ export default function DeepDiveReview() {
   };
 
   const handleEditCard = (card) => {
-    setCurrentEditCard(card);
+    setCurrentEditCard({...card});
     setIsEditModalOpen(true);
   };
 
@@ -211,6 +205,12 @@ export default function DeepDiveReview() {
     } catch (error) {
       console.error('Failed to update flashcard:', error);
     }
+  };
+
+  const handleSpeak = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR'; // Set to Korean for Korean words
+    window.speechSynthesis.speak(utterance);
   };
 
   const ReviewInterface = () => {
@@ -307,9 +307,14 @@ export default function DeepDiveReview() {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Deep Dive Review</h1>
-        <Link href="/review" className="btn btn-ghost">
-          Back to Review
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/review/deep/analytics" className="btn btn-primary">
+            View Analytics
+          </Link>
+          <Link href="/review" className="btn btn-ghost">
+            Back to Review
+          </Link>
+        </div>
       </div>
 
       {loading ? (

@@ -53,29 +53,51 @@
    - 🟨 Mobile-first navigation
 
 4. Advanced Review System 🔴
-   - 🔴 Spaced repetition algorithm
-   - 🔴 Review scheduling
-   - 🔴 Progress tracking
-   - 🔴 Review history
-   - 🔴 Learning analytics
+   - 🟨 Deep Review Implementation
+     * ✅ Basic UI setup
+     * ✅ Session configuration
+     * ✅ Double review queue
+     * 🟨 Core review logic
+       - Need to simplify using ReviewContent.js logic
+       - Add mode:'deep' to review history
+       - Keep promotion/demotion logic consistent
+     * 🟨 Analytics tracking
+       - Basic structure implemented
+       - Need to fix session tracking
+       - Need to implement proper level change tracking
+   
+   Next Steps (Priority Order):
 
-5. Data Analysis & Visualization 🔴
-   - 🔴 Learning analytics dashboard
-   - 🔴 Progress visualization
-   - 🔴 Word frequency analysis
-   - 🔴 Learning pace tracking
-   - 🔴 Study streak tracking
+   0. Need to review the "basic" review system
+      Add review vocabulary to each text.
+      * Do a vocabulary review to see what needs to be changed.
+      
+   1. Simplify deep review implementation
+      - Copy working logic from ReviewContent.js
+      - Add minimal deep review specific tracking
+      - Test basic functionality
+      * pages to view:
+         javascript:src/app/review/deep/page.js
+         javascript:src/app/review/deep/analytics/page.js
 
-6. Audio Features 🟨
-   - ✅ Basic audio file upload and storage
-   - ✅ Basic audio playback integration
-   - ✅ Voice selection
-   - ✅ Speed controls
-   - ✅ Keyboard controls
-   - ✅ Sentence highlighting
-   - 🔴 Audio progress tracking
-   - 🔴 Resume functionality
-   - 🔴 Advanced synchronization
+   2. Fix analytics tracking
+      - Ensure review history properly tracks deep review sessions
+      - Implement proper level change counting
+      - Add performance tracking over time
+   
+   3. Implement focused study sessions
+      - Use analytics data to identify problem words
+      - Create targeted review sessions
+      - Track improvement on difficult words
+
+   4. Complete remaining features
+      - 🔴 Spaced repetition algorithm
+      - 🔴 Review scheduling
+      - 🔴 Learning analytics dashboard
+      - 🔴 Study streak tracking
+
+Technical Notes for Return:
+1. Review logic location: 
 
 ## Future Development
 1. Authentication System
