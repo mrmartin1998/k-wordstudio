@@ -44,6 +44,10 @@ export default function CollectionView() {
     }
   };
 
+  const handleReviewClick = () => {
+    router.push(`/review?collectionId=${params.id}`);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -57,12 +61,20 @@ export default function CollectionView() {
       <div className="flex flex-col items-center mb-4">
         <h1 className="text-2xl font-bold mb-2">{collection.name}</h1>
         <p className="text-base-content/70 text-center mb-2">{collection.description}</p>
-        <Link 
-          href="/collections" 
-          className="btn btn-primary btn-sm"
-        >
-          ← Back to Collections
-        </Link>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleReviewClick}
+            className="btn btn-primary mb-3"
+          >
+            Review Vocabulary
+          </button>
+          <Link 
+            href="/collections" 
+            className="btn btn-ghost mb-3"
+          >
+            Back to Collections
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">

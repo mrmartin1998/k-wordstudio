@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { fetchFlashcards, fetchTexts, updateFlashcard } from '@/lib/utils';
+import { fetchFlashcards, fetchTexts, updateFlashcard, fetchCollections } from '@/lib/utils';
 import EditFlashcardModal from '@/app/components/flashcards/EditFlashcardModal';
 import ReviewSummary from '@/app/components/review/ReviewSummary';
 import { getLevelColor, getLevelText } from '@/lib/utils';
@@ -29,21 +29,31 @@ export default function ReviewContent() {
   });
   const [reviewMode, setReviewMode] = useState('normal');
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState('all');
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [cardsData, textsData] = await Promise.all([
+        const [cardsData, textsData, collectionsData] = await Promise.all([
           fetchFlashcards(),
-          fetchTexts()
+          fetchTexts(),
+          fetchCollections()
         ]);
         setCards(cardsData);
         setTexts(textsData);
+        setCollections(collectionsData);
         
         // Get textId from URL if present
         const textId = searchParams.get('textId');
         if (textId) {
           setSelectedText(textId);
+        }
+        
+        // Get collectionId from URL if present
+        const collectionId = searchParams.get('collectionId');
+        if (collectionId) {
+          setSelectedCollection(collectionId);
         }
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -137,6 +147,13 @@ export default function ReviewContent() {
     
     if (selectedText !== 'all') {
       filtered = filtered.filter(card => card.sourceTextId === selectedText);
+    }
+
+    if (selectedCollection !== 'all') {
+      // Filter cards that belong to texts in the selected collection
+      const collection = collections.find(c => c._id === selectedCollection);
+      const textIds = collection?.texts?.map(t => t._id) || [];
+      filtered = filtered.filter(card => textIds.includes(card.sourceTextId));
     }
 
     // Check if we have any cards after filtering
@@ -345,6 +362,21 @@ export default function ReviewContent() {
                   <option value="3">Level 3 (Intermediate)</option>
                   <option value="4">Level 4 (Advanced)</option>
                   <option value="5">Level 5 (Known)</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Collection to review</label>
+                <select
+                  value={selectedCollection}
+                  onChange={(e) => setSelectedCollection(e.target.value)}
+                  className="select select-bordered w-full"
+                >
+                  <option value="all">All Collections</option>
+                  {collections.map(collection => (
+                    <option key={collection._id} value={collection._id}>
+                      {collection.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
