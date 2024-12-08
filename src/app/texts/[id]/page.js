@@ -127,11 +127,14 @@ export default function TextView() {
         newCard = await createFlashcard({
           ...flashcard,
           sourceTextId: params.id,
+          relatedTexts: [params.id],
+          word: flashcard.word.toLowerCase(),
           level: 0,
           reviewCount: 0,
           lastReviewed: new Date(),
           dateAdded: new Date()
         });
+        console.log('Created flashcard with sourceTextId:', params.id);
         setFlashcards([...flashcards, newCard]);
       }
       
@@ -324,15 +327,23 @@ export default function TextView() {
   const calculateStats = () => {
     if (!text || !flashcards) return { totalWords: 0, knownWords: 0, comprehension: 0 };
 
-    const words = text.content.split(/\s+/);
-    const totalWords = words.length;
+    // Get unique words from text
+    const textWords = new Set(
+      text.content
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(word => word.trim())
+    );
     
-    // Only count words with flashcards that have been reviewed and learned (level > 0)
-    const knownWords = new Set(
-      flashcards
-        .filter(card => card.sourceTextId === params.id && card.level > 3)
-        .map(card => card.word.toLowerCase())
-    ).size;
+    const totalWords = textWords.size;
+    
+    // Count known words (including those learned from other texts)
+    const knownWords = Array.from(textWords).filter(word =>
+      flashcards.some(card => 
+        card.word.toLowerCase() === word && 
+        card.level > 3
+      )
+    ).length;
 
     const comprehension = totalWords > 0 
       ? Math.round((knownWords / totalWords) * 100) 
@@ -410,6 +421,28 @@ export default function TextView() {
 
   const handleReviewClick = () => {
     router.push(`/review?textId=${params.id}`);
+  };
+
+  const updateRelatedTexts = async (word, textId) => {
+    // Find existing flashcards with the same word
+    const existingCards = flashcards.filter(
+      card => card.word.toLowerCase() === word.toLowerCase()
+    );
+    
+    if (existingCards.length > 0) {
+      // Update all related cards to include this text
+      for (const card of existingCards) {
+        const relatedTexts = new Set([
+          ...(card.relatedTexts || []),
+          textId
+        ]);
+        
+        await updateFlashcard(card._id, {
+          ...card,
+          relatedTexts: Array.from(relatedTexts)
+        });
+      }
+    }
   };
 
   return (

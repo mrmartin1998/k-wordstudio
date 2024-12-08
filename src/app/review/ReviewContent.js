@@ -36,11 +36,16 @@ export default function ReviewContent() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('Loading review data...');
         const [cardsData, textsData, collectionsData] = await Promise.all([
           fetchFlashcards(),
           fetchTexts(),
           fetchCollections()
         ]);
+        console.log('Loaded cards:', cardsData.length);
+        console.log('Loaded texts:', textsData.length);
+        console.log('Loaded collections:', collectionsData.length);
+        
         setCards(cardsData);
         setTexts(textsData);
         setCollections(collectionsData);
@@ -48,12 +53,14 @@ export default function ReviewContent() {
         // Get textId from URL if present
         const textId = searchParams.get('textId');
         if (textId) {
+          console.log('URL textId:', textId);
           setSelectedText(textId);
         }
         
         // Get collectionId from URL if present
         const collectionId = searchParams.get('collectionId');
         if (collectionId) {
+          console.log('URL collectionId:', collectionId);
           setSelectedCollection(collectionId);
         }
       } catch (error) {
@@ -171,24 +178,65 @@ export default function ReviewContent() {
   };
 
   const handleStartReview = () => {
+    console.log('Starting review with cards:', cards.length);
+    console.log('Selected level:', selectedLevel);
+    console.log('Selected text:', selectedText);
+    console.log('Selected collection:', selectedCollection);
+
+    // Initial level filtering
     let filtered = selectedLevel === 'all'
       ? cards
       : cards.filter(card => card.level === parseInt(selectedLevel));
     
+    console.log('After level filter:', filtered.length);
+
     if (selectedText !== 'all') {
-      filtered = filtered.filter(card => card.sourceTextId === selectedText);
+      // Get all words from the selected text
+      const targetText = texts.find(t => t._id === selectedText);
+      if (targetText) {
+        const textWords = new Set(
+          targetText.content
+            .toLowerCase()
+            .split(/\s+/)
+            .filter(word => word.trim())
+        );
+
+        // Filter cards that match words in the text
+        filtered = filtered.filter(card => 
+          textWords.has(card.word.toLowerCase())
+        );
+      }
+      console.log('After text filter (including shared words):', filtered.length);
     }
 
     if (selectedCollection !== 'all') {
-      // Filter cards that belong to texts in the selected collection
       const collection = collections.find(c => c._id === selectedCollection);
-      const textIds = collection?.texts?.map(t => t._id) || [];
-      filtered = filtered.filter(card => textIds.includes(card.sourceTextId));
+      if (collection) {
+        const collectionTexts = texts.filter(t => 
+          collection.texts.includes(t._id)
+        );
+        
+        // Get all words from collection texts
+        const collectionWords = new Set(
+          collectionTexts.flatMap(text => 
+            text.content
+              .toLowerCase()
+              .split(/\s+/)
+              .filter(word => word.trim())
+          )
+        );
+
+        // Filter cards that match words in the collection
+        filtered = filtered.filter(card => 
+          collectionWords.has(card.word.toLowerCase())
+        );
+      }
+      console.log('After collection filter:', filtered.length);
     }
 
     // Check if we have any cards after filtering
     if (filtered.length === 0) {
-      alert('No cards available for the selected criteria');
+      alert('No cards available for the selected criteria. Total cards: ' + cards.length);
       return;
     }
     

@@ -28,15 +28,22 @@ export default function Texts() {
       
       // Calculate stats for each text
       const textsWithStats = textsData.map(text => {
-        const textFlashcards = cardsData.filter(card => card.sourceTextId === text._id);
         const words = text.content.split(/\s+/);
         const totalWords = words.length;
+        
+        // Count known words including those learned from other texts
         const knownWords = new Set(
-          textFlashcards
-            .filter(card => card.level >= 3)
-            .map(card => card.word.toLowerCase())
+          words.filter(word => 
+            cardsData.some(card => 
+              card.word.toLowerCase() === word.toLowerCase() && 
+              card.level >= 3
+            )
+          )
         ).size;
-        const comprehension = totalWords > 0 ? Math.round((knownWords / totalWords) * 100) : 0;
+
+        const comprehension = totalWords > 0 
+          ? Math.round((knownWords / totalWords) * 100) 
+          : 0;
 
         return {
           ...text,
@@ -79,12 +86,23 @@ export default function Texts() {
       const flashcards = await fetchFlashcards();
       
       for (const text of texts) {
-        const words = text.content.split(/(\s+|[,.!?])/);
-        const totalWords = words.filter(w => w.trim() && !/^[,.!?]$/.test(w)).length;
-        const knownWords = words.filter(word => {
-          const flashcard = flashcards.find(c => c.word === word);
-          return flashcard?.level >= 3;
-        }).length;
+        // Get unique words from text
+        const textWords = new Set(
+          text.content
+            .toLowerCase()
+            .split(/\s+/)
+            .filter(word => word.trim())
+        );
+        
+        const totalWords = textWords.size;
+        
+        // Count known words (including those learned from other texts)
+        const knownWords = Array.from(textWords).filter(word =>
+          flashcards.some(card => 
+            card.word.toLowerCase() === word && 
+            card.level >= 3
+          )
+        ).length;
 
         const stats = {
           totalWords,
